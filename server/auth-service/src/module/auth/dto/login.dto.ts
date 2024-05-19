@@ -1,14 +1,15 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { UserType } from 'src/const/const';
 
-export class AuthRegisterEmailDto {
+export class LoginDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   email: string;
 
   @IsString()
   @IsNotEmpty()
   password: string;
 
+  @IsEnum(UserType)
   type: UserType;
 }

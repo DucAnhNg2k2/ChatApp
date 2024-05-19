@@ -5,9 +5,13 @@ import {
   DeleteDateColumn,
   Entity,
   Generated,
+  OneToMany,
+  OneToOne,
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { UserOtp } from './user-otp.entity';
+import { UserToken } from './user-token.entity';
 
 @Entity('user')
 export class User {
@@ -32,6 +36,12 @@ export class User {
 
   @Column()
   type: UserType;
+
+  @OneToOne(() => UserOtp, (userOtp) => userOtp.user)
+  userOtp: UserOtp;
+
+  @OneToMany(() => UserToken, (userToken) => userToken.user)
+  userTokens: UserToken[];
 
   @Column({ default: false })
   isActive: boolean;

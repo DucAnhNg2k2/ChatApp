@@ -26,4 +26,11 @@ export class AuthRepository {
       type: autoRegisterEmailDto.type,
     });
   }
+
+  updateActive(id: number): Promise<User> {
+    return this.usersRepository.save({
+      id,
+      isActive: true,
+    });
+  }
 }

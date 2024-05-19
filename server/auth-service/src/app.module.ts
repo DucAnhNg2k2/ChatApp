@@ -6,6 +6,8 @@ import { QueueModule } from './module/queue/queue.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './database/entity/user.entity';
+import { UserOtp } from './database/entity/user-otp.entity';
+import { UserToken } from './database/entity/user-token.entity';
 
 @Module({
   imports: [
@@ -19,8 +21,8 @@ import { User } from './database/entity/user.entity';
         username: configService.get('DATABASE_USER'),
         password: configService.get('DATABASE_PASSWORD'),
         database: configService.get('DATABASE_NAME'),
-        entities: [User],
-        // synchronize: true,
+        entities: [User, UserOtp, UserToken],
+        synchronize: true,
       }),
       inject: [ConfigService],
     }),

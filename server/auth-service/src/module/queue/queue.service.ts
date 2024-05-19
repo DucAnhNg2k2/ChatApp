@@ -5,10 +5,11 @@ import {
   QueueOptions,
 } from './queue.const';
 import * as Bull from 'bull';
+import { typeJobReceiveSendMail } from 'src/const/const';
 
 @Injectable()
 export class QueueService {
-  private queue: Bull.Queue;
+  private queue: Bull.Queue<typeJobReceiveSendMail>;
 
   constructor(
     @Inject(QUEUE_MODULE_OPTIONS)
@@ -27,7 +28,8 @@ export class QueueService {
     });
   }
 
-  public async sendMain(userId: number) {
-    const job = await this.queue.add(userId);
+  public async sendMain(data: typeJobReceiveSendMail) {
+    const job = await this.queue.add(data);
+    return job;
   }
 }
