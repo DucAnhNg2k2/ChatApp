@@ -2,6 +2,7 @@ import { DynamicModule, Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { QueueService } from './queue.service';
 import { QUEUE_MODULE_OPTIONS, QueueModuleOptions } from './queue.const';
+import { QueueController } from './queue.controller';
 
 @Global()
 @Module({})
@@ -18,7 +19,7 @@ export class QueueModule {
         },
         QueueService,
       ],
-      controllers: [],
+      controllers: [QueueController],
       exports: [QueueService],
     };
   }

@@ -1,16 +1,18 @@
-import { config } from './../node_modules/rxjs/src/internal/config';
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { ConfigService } from '@nestjs/config';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { InterceptorResponse } from './interceptors/InterceptorResponse';
 import { ValidationPipe } from '@nestjs/common';
-import { HttpExceptionResponse } from './exception/ExceptionResponse';
+import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AppModule } from './app.module';
+import { HttpExceptionResponse } from './exceptions/response.exception';
+import { InterceptorResponse } from './interceptors/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
   const configService = app.get<ConfigService>(ConfigService);
   const port = configService.get('SERVER_PORT') || 3001;
+  const transportTcp = configService.get('TCP_PORT') || 3003;
   console.log('auth-service. Listening port:', port);
 
   const config = new DocumentBuilder()
@@ -24,6 +26,14 @@ async function bootstrap() {
   app.useGlobalInterceptors(new InterceptorResponse());
   app.useGlobalFilters(new HttpExceptionResponse());
 
+  const microservice = app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.TCP,
+    options: {
+      port: transportTcp,
+    },
+  });
+
+  await app.startAllMicroservices();
   await app.listen(port);
 }
 bootstrap();

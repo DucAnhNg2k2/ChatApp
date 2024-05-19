@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { UserReq } from 'src/const/const';
 import { User } from 'src/database/entity/user.entity';
 
 @Injectable()
-export class JwtServiceImplement {
+export class JwtCoreService {
   private readonly JWT_SECRET: string;
   private readonly JWT_EXPIRED: number;
 
@@ -18,7 +19,7 @@ export class JwtServiceImplement {
   }
 
   signAccessToken(user: User) {
-    const payload = { userId: user.id };
+    const payload: UserReq = { id: user.id };
     const token = this.jwtService.sign(JSON.stringify(payload), {
       secret: this.JWT_SECRET,
     });
@@ -30,7 +31,7 @@ export class JwtServiceImplement {
   }
 
   signRefreshToken(user: User) {
-    const payload = { userId: user.id };
+    const payload: UserReq = { id: user.id };
     const token = this.jwtService.sign(JSON.stringify(payload), {
       secret: this.JWT_SECRET,
     });
@@ -44,6 +45,7 @@ export class JwtServiceImplement {
     const payload = this.jwtService.verify(token, {
       secret: this.JWT_SECRET,
     });
-    return JSON.parse(payload);
+    const user: UserReq = payload;
+    return user;
   }
 }

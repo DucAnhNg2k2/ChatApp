@@ -15,3 +15,11 @@ export interface typeJobReceiveSendMail {
   text: string;
   html?: string;
 }
+
+export class UserReq {
+  id: number;
+}
+
+export const PATTERN = {
+  VERIFY_AUTH: 'VERIFY_AUTH',
+};

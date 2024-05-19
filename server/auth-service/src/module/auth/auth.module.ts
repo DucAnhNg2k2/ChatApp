@@ -1,30 +1,19 @@
-import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from 'src/database/entity/user.entity';
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
 import { AuthRepository } from './auth.repository';
+import { AuthService } from './auth.service';
+import { JwtCoreModule } from '../jwt/jwt.core.module';
 import { UserOtp } from 'src/database/entity/user-otp.entity';
 import { UserToken } from 'src/database/entity/user-token.entity';
-import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { JwtServiceImplement } from './jwt.service';
+import { User } from 'src/database/entity/user.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([User, UserOtp, UserToken]),
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET'),
-      }),
-      inject: [ConfigService],
-    }),
-    ConfigModule,
-  ],
+  imports: [TypeOrmModule.forFeature([User, UserOtp, UserToken])],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepository, JwtServiceImplement],
-  exports: [AuthService],
+  providers: [AuthService, AuthRepository],
+  exports: [AuthService, AuthRepository],
 })
 export class AuthModule {
   constructor() {}

@@ -8,6 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './database/entity/user.entity';
 import { UserOtp } from './database/entity/user-otp.entity';
 import { UserToken } from './database/entity/user-token.entity';
+import { JwtCoreModule } from './module/jwt/jwt.core.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { UserToken } from './database/entity/user-token.entity';
       }),
       inject: [ConfigService],
     }),
+    JwtCoreModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -2,7 +2,7 @@ import { AuthRepository } from './auth.repository';
 import { BadRequestException, Body, Injectable } from '@nestjs/common';
 import { QueueService } from '../queue/queue.service';
 import { AuthRegisterEmailDto } from './dto/auth-register-email.dto';
-import { UserType, VerifyOTPType } from 'src/const/const';
+import { UserReq, UserType, VerifyOTPType } from 'src/const/const';
 import { Repository } from 'typeorm';
 import { UserOtp } from 'src/database/entity/user-otp.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,7 +10,7 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
 import { LoginDto } from './dto/login.dto';
 import { UserToken } from 'src/database/entity/user-token.entity';
-import { JwtServiceImplement } from './jwt.service';
+import { JwtCoreService } from '../jwt/jwt.core.service';
 
 @Injectable()
 export class AuthService {
@@ -23,7 +23,7 @@ export class AuthService {
     private readonly userOtpRepository: Repository<UserOtp>,
     @InjectRepository(UserToken)
     private readonly userTokenRepository: Repository<UserToken>,
-    private readonly jwtService: JwtServiceImplement,
+    private readonly jwtService: JwtCoreService,
   ) {}
 
   async register(authRegisterEmailDto: AuthRegisterEmailDto) {
@@ -143,5 +143,27 @@ export class AuthService {
   private randomOtp() {
     const otp = Math.floor(100000 + Math.random() * 900000);
     return otp.toString();
+  }
+
+  async verifyHeaderToken(token: string): Promise<UserReq> {
+    const user: UserReq = this.jwtService.verify(token);
+    const userToken = await this.userTokenRepository.findOne({
+      where: {
+        accessToken: token,
+        userId: user.id,
+      },
+      relations: ['user'],
+    });
+
+    if (!userToken) {
+      throw new BadRequestException('Invalid token');
+    }
+    if (new Date(userToken.expiredAccessTokenAt) < new Date()) {
+      throw new BadRequestException('Token expired');
+    }
+
+    return {
+      id: user.id,
+    };
   }
 }
