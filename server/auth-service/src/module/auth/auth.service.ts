@@ -11,6 +11,7 @@ import { ResendOtpDto } from './dto/resend-otp.dto';
 import { LoginDto } from './dto/login.dto';
 import { UserToken } from 'src/database/entity/user-token.entity';
 import { JwtCoreService } from '../jwt/jwt.core.service';
+import { randomOtp } from 'src/utils/randomOtp';
 
 @Injectable()
 export class AuthService {
@@ -41,7 +42,7 @@ export class AuthService {
       throw new BadRequestException('Failed to register user');
     }
 
-    const otp = this.randomOtp();
+    const otp = randomOtp();
     await this.userOtpRepository.insert({
       user,
       otp,
@@ -92,7 +93,7 @@ export class AuthService {
     if (!userOtp) {
       throw new BadRequestException('Email not found');
     }
-    const newOtp = this.randomOtp();
+    const newOtp = randomOtp();
     await this.userOtpRepository.update(userOtp.id, {
       otp: newOtp,
       expiredAt: new Date(Date.now() + this.TIME_EXPIRED_OTP).toISOString(),
@@ -138,11 +139,6 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
-  }
-
-  private randomOtp() {
-    const otp = Math.floor(100000 + Math.random() * 900000);
-    return otp.toString();
   }
 
   async verifyHeaderToken(token: string): Promise<UserReq> {

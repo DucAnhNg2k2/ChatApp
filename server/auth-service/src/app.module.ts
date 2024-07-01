@@ -9,6 +9,12 @@ import { User } from './database/entity/user.entity';
 import { UserOtp } from './database/entity/user-otp.entity';
 import { UserToken } from './database/entity/user-token.entity';
 import { JwtCoreModule } from './module/jwt/jwt.core.module';
+import {
+  QUEUE_HOST,
+  QUEUE_PASSWORD,
+  QUEUE_PORT,
+  QUEUE_USER,
+} from './const/queue.const';
 
 @Module({
   imports: [
@@ -31,10 +37,10 @@ import { JwtCoreModule } from './module/jwt/jwt.core.module';
     QueueModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService) => ({
-        host: configService.get('QUEUE_HOST'),
-        port: configService.get('QUEUE_PORT'),
-        user: configService.get('QUEUE_USER'),
-        password: configService.get('QUEUE_PASSWORD'),
+        host: configService.get(QUEUE_HOST),
+        port: configService.get(QUEUE_PORT),
+        user: configService.get(QUEUE_USER),
+        password: configService.get(QUEUE_PASSWORD),
       }),
       inject: [ConfigService],
     }),

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UserReq } from 'src/const/const';
+import { JWT_EXPIRED, JWT_SECRET } from 'src/const/jwt.const';
 import { User } from 'src/database/entity/user.entity';
 
 @Injectable()
@@ -13,8 +14,8 @@ export class JwtCoreService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
   ) {
-    this.JWT_SECRET = this.configService.get<string>('JWT_SECRET');
-    this.JWT_EXPIRED = this.configService.get<number>('JWT_EXPIRED');
+    this.JWT_SECRET = this.configService.get<string>(JWT_SECRET);
+    this.JWT_EXPIRED = this.configService.get<number>(JWT_EXPIRED);
     console.log(this.JWT_SECRET, this.JWT_EXPIRED);
   }
 

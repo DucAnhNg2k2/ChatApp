@@ -1,11 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { PATTERN } from './const/const';
+import { AuthService, PATTERN } from './const/const';
 import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class AppService {
-  constructor(@Inject('AUTH_SERVICE') private authServiceClient: ClientProxy) {}
+  constructor(
+    @Inject(AuthService.AUTH_SERVICE) private authServiceClient: ClientProxy,
+  ) {}
 
   getHello(): string {
     return 'Hello World!';

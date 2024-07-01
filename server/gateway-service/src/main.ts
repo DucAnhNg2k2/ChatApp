@@ -3,7 +3,8 @@ import { AppModule } from './app.module';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { ConfigService } from '@nestjs/config';
 import { AppService } from './app.service';
-import { Response, Request } from 'express';
+import { Response, Request, NextFunction } from 'express';
+import { AuthService, Server } from './const/const';
 
 const whiteListEndPoint = [
   '/auth/register',
@@ -16,16 +17,16 @@ const proxyToAuthService = ['auth'];
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get<ConfigService>(ConfigService);
-  const port = configService.get('SERVER_PORT') || 3000;
+  const port = configService.get(Server.SERVER_PORT) || 3000;
   console.log('gateway-service. Listening port:', port);
 
-  const authServiceHost = configService.get('AUTH_SERVICE_HOST');
-  const authServicePort = configService.get('AUTH_SERVICE_PORT');
+  const authServiceHost = configService.get(AuthService.AUTH_SERVICE_HOST);
+  const authServicePort = configService.get(AuthService.AUTH_SERVICE_PORT);
 
   const appService = app.get<AppService>(AppService);
 
   // Middleware to verify token
-  app.use(async (req: Request, res: Response, next) => {
+  app.use(async (req: Request, res: Response, next: NextFunction) => {
     if (whiteListEndPoint.includes(req.path)) {
       console.log('White list endpoint:', req.path);
       return next();

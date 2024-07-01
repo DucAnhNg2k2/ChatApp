@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { AuthService } from './const/const';
 
 @Module({
   imports: [
@@ -10,14 +11,16 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
     ClientsModule.registerAsync({
       clients: [
         {
-          name: 'AUTH_SERVICE',
+          name: AuthService.AUTH_SERVICE,
           imports: [ConfigModule],
           useFactory: (ConfigService: ConfigService) => {
             return {
               transport: Transport.TCP,
               options: {
-                host: ConfigService.get('AUTH_SERVICE_HOST'),
-                port: ConfigService.get('AUTH_SERVICE_TRANSPORT_PORT'),
+                host: ConfigService.get(AuthService.AUTH_SERVICE_HOST),
+                port: ConfigService.get(
+                  AuthService.AUTH_SERVICE_TRANSPORT_PORT,
+                ),
               },
             };
           },
