@@ -1,0 +1,3 @@
+export const MESSAGE_PATTERN = {
+  MAP_TO_MEMBER_CHAT: 'MAP_TO_MEMBER_CHAT',
+};
