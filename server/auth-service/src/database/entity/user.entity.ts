@@ -15,7 +15,7 @@ import { UserToken } from './user-token.entity';
 
 @Entity('user')
 export class User {
-  @PrimaryColumn('int', { unsigned: true, generated: true })
+  @PrimaryColumn('bigint', { unsigned: true, generated: true })
   @Generated('increment')
   id: number;
 

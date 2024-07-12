@@ -4,6 +4,10 @@ import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  });
   const configService = app.get<ConfigService>(ConfigService);
   const port = configService.get('SERVER_PORT') || 3004;
   console.log('chat-service. Listening port:', port);
