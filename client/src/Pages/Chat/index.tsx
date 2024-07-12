@@ -33,7 +33,7 @@ const SIZE = 15;
 const Conversation = () => {
   const token = useSelector((state: RootState) => state.token).value;
   const profile = useSelector((state: RootState) => state.profile).data;
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [isLoading, setIsLoading] = React.useState<boolean>(true);
   // Detail-Conversation List-members[]
   const [conversationDetailDTO, setConversationDetailDTO] = React.useState<ConversationDetailDTO>();
   // GetAll-Conversations
@@ -56,42 +56,42 @@ const Conversation = () => {
   const refFile = React.useRef<HTMLInputElement>(null);
   const refConversation = React.useRef<HTMLDivElement>(null);
 
-  // Get Conversation-All[]
-  React.useEffect(() => {
-    try {
-      requestConversationGetAll(token).then(response => {
-        const res: ResponseType = response.data;
-        if (res.statusCode === HttpStatusCode.Ok) {
-          setConversationGetAllDTO(res.data);
-        }
-      });
-    } catch (err) {
-      console.log(err);
-    }
-  }, []);
+  // // Get Conversation-All[]
+  // React.useEffect(() => {
+  //   try {
+  //     requestConversationGetAll(token).then(response => {
+  //       const res: ResponseType = response.data;
+  //       if (res.statusCode === HttpStatusCode.Ok) {
+  //         setConversationGetAllDTO(res.data);
+  //       }
+  //     });
+  //   } catch (err) {
+  //     console.log(err);
+  //   }
+  // }, []);
 
-  // Connect socket
-  React.useEffect(() => {
-    try {
-      const socket = new WebSocket(`ws://${HOST_SERVER}:${PORT_SERVER}/socket?token=${token}`);
-      socket.onopen = () => {
-        toast.success("Connect to socket success !", toastObject);
-      };
-      socket.onmessage = handleOnMessage;
-      socket.onclose = () => {
-        toast.error("Close socket !!", toastObject);
-      };
-      setSocket(socket);
-    } catch (err) {
-      console.log(err);
-    }
-  }, []);
+  // // Connect socket
+  // React.useEffect(() => {
+  //   try {
+  //     const socket = new WebSocket(`ws://${HOST_SERVER}:${PORT_SERVER}/socket?token=${token}`);
+  //     socket.onopen = () => {
+  //       toast.success("Connect to socket success !", toastObject);
+  //     };
+  //     socket.onmessage = handleOnMessage;
+  //     socket.onclose = () => {
+  //       toast.error("Close socket !!", toastObject);
+  //     };
+  //     setSocket(socket);
+  //   } catch (err) {
+  //     console.log(err);
+  //   }
+  // }, []);
 
-  React.useEffect(() => {
-    if (isVisible) {
-      toast.error("Cập nhật avatar và tên");
-    }
-  }, []);
+  // React.useEffect(() => {
+  //   if (isVisible) {
+  //     toast.error("Cập nhật avatar và tên");
+  //   }
+  // }, []);
 
   // Logic
   // Receive Text on socket

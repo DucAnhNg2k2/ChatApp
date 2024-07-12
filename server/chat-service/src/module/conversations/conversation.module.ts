@@ -6,6 +6,7 @@ import {
   Conversations,
   ConversationsSchema,
 } from 'src/schema/conversation.schema';
+import { MemberModule } from '../members/member.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import {
       [{ name: Conversations.name, schema: ConversationsSchema }],
       'chat-service',
     ),
+    MemberModule,
   ],
   controllers: [ConversationController],
   providers: [ConversationService],

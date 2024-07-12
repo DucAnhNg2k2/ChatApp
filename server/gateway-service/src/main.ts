@@ -4,7 +4,7 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 import { ConfigService } from '@nestjs/config';
 import { AppService } from './app.service';
 import { Response, Request, NextFunction } from 'express';
-import { AuthService, Server } from './const/const';
+import { AuthService, ChatService, Server } from './const/const';
 
 const whiteListEndPoint = [
   '/auth/register',
@@ -12,7 +12,8 @@ const whiteListEndPoint = [
   '/auth/verify-otp',
   '/auth/resend-otp',
 ];
-const proxyToAuthService = ['auth'];
+const proxyToAuthService = ['auth', 'user-profile'];
+const proxyToChatService = ['conversations', 'messages'];
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -27,6 +28,8 @@ async function bootstrap() {
   const authServiceHost = configService.get(AuthService.AUTH_SERVICE_HOST);
   const authServicePort = configService.get(AuthService.AUTH_SERVICE_PORT);
 
+  const chatServiceHost = configService.get(ChatService.CHAT_SERVICE_HOST);
+  const chatServicePort = configService.get(ChatService.CHAT_SERVICE_PORT);
   const appService = app.get<AppService>(AppService);
 
   // Middleware to verify token
@@ -52,8 +55,8 @@ async function bootstrap() {
         res.status(401).send('Unauthorized');
       }
 
-      delete req['user'];
-      req['user'] = JSON.stringify(user);
+      delete req.headers['user'];
+      req.headers['user'] = JSON.stringify(user);
       next();
       return;
     } catch (error) {
@@ -67,6 +70,19 @@ async function bootstrap() {
       `/${path}`,
       createProxyMiddleware({
         target: `http://${authServiceHost}:${authServicePort}/${path}`,
+        changeOrigin: true,
+        on: {
+          proxyReq: (proxyReq, req, res) => {},
+        },
+      }),
+    );
+  });
+  // Proxy to chat-service
+  proxyToChatService.forEach((path) => {
+    app.use(
+      `/${path}`,
+      createProxyMiddleware({
+        target: `http://${chatServiceHost}:${chatServicePort}/${path}`,
         changeOrigin: true,
         on: {
           proxyReq: (proxyReq, req, res) => {},

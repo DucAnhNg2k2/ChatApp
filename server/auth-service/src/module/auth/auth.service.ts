@@ -1,17 +1,17 @@
-import { AuthRepository } from './auth.repository';
-import { BadRequestException, Body, Injectable } from '@nestjs/common';
-import { QueueService } from '../queue/queue.service';
-import { AuthRegisterEmailDto } from './dto/auth-register-email.dto';
-import { UserReq, UserType, VerifyOTPType } from 'src/const/const';
-import { Repository } from 'typeorm';
-import { UserOtp } from 'src/database/entity/user-otp.entity';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { VerifyOtpDto } from './dto/verify-otp.dto';
-import { ResendOtpDto } from './dto/resend-otp.dto';
-import { LoginDto } from './dto/login.dto';
+import { UserReq, UserType, VerifyOTPType } from 'src/const/const';
+import { UserOtp } from 'src/database/entity/user-otp.entity';
 import { UserToken } from 'src/database/entity/user-token.entity';
-import { JwtCoreService } from '../jwt/jwt.core.service';
 import { randomOtp } from 'src/utils/randomOtp';
+import { Repository } from 'typeorm';
+import { JwtCoreService } from '../jwt/jwt.core.service';
+import { QueueService } from '../queue/queue.service';
+import { AuthRepository } from './auth.repository';
+import { AuthRegisterEmailDto } from './dto/auth-register-email.dto';
+import { LoginDto } from './dto/login.dto';
+import { ResendOtpDto } from './dto/resend-otp.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
 
 @Injectable()
 export class AuthService {
@@ -150,7 +150,6 @@ export class AuthService {
       },
       relations: ['user'],
     });
-
     if (!userToken) {
       throw new BadRequestException('Invalid token');
     }

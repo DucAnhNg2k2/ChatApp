@@ -7,8 +7,8 @@ export type ConversationsDocument = mongoose.HydratedDocument<Conversations>;
 
 @Schema({ timestamps: true })
 export class Conversations {
-  @Prop({ type: [Members] })
-  members: Members[];
+  @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: Members.name })
+  members: string[] | Members[];
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Messages.name })
   lastMessage: string | Messages;

@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 import { UserOtp } from './user-otp.entity';
 import { UserToken } from './user-token.entity';
+import { UserProfile } from './user-profile.entity';
 
 @Entity('user')
 export class User {
@@ -39,6 +40,9 @@ export class User {
 
   @OneToOne(() => UserOtp, (userOtp) => userOtp.user)
   userOtp: UserOtp;
+
+  @OneToOne(() => UserProfile, (userProfile) => userProfile.user)
+  userProfile: UserProfile;
 
   @OneToMany(() => UserToken, (userToken) => userToken.user)
   userTokens: UserToken[];

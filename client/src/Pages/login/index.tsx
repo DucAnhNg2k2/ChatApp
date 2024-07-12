@@ -109,13 +109,6 @@ const Login = () => {
           dispatch(setValueToken(accessToken));
           navigate(RouterName.CONVERSATION);
           toast.success("Đăng nhập thành công !!", toastObject);
-
-          // const resProfile: ResponseType = (await requestGetProfile(accessToken)).data;
-          // if (resProfile.statusCode === HttpStatusCode.Ok) {
-          //   const profile: ProfileDTO = resProfile.data;
-          //   dispatch(setProfile(profile));
-          //   navigate("/conversation");
-          // }
         }
       } else {
         toast.error("Đăng nhập thất bại !!", toastObject);

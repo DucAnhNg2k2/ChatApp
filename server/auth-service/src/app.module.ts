@@ -1,20 +1,24 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { AuthModule } from './module/auth/auth.module';
-import { QueueModule } from './module/queue/queue.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './database/entity/user.entity';
-import { UserOtp } from './database/entity/user-otp.entity';
-import { UserToken } from './database/entity/user-token.entity';
-import { JwtCoreModule } from './module/jwt/jwt.core.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 import {
   QUEUE_HOST,
   QUEUE_PASSWORD,
   QUEUE_PORT,
   QUEUE_USER,
 } from './const/queue.const';
+import { UserOtp } from './database/entity/user-otp.entity';
+import { UserProfile } from './database/entity/user-profile.entity';
+import { UserToken } from './database/entity/user-token.entity';
+import { User } from './database/entity/user.entity';
+import { AuthModule } from './module/auth/auth.module';
+import { JwtCoreModule } from './module/jwt/jwt.core.module';
+import { QueueModule } from './module/queue/queue.module';
+import { UserProfileModule } from './module/user-profile/user-profile.module';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ChatService } from './const/const';
 
 @Module({
   imports: [
@@ -28,7 +32,7 @@ import {
         username: configService.get('DATABASE_USER'),
         password: configService.get('DATABASE_PASSWORD'),
         database: configService.get('DATABASE_NAME'),
-        entities: [User, UserOtp, UserToken],
+        entities: [User, UserOtp, UserToken, UserProfile],
         synchronize: false,
       }),
       inject: [ConfigService],
@@ -45,6 +49,7 @@ import {
       inject: [ConfigService],
     }),
     JwtCoreModule,
+    UserProfileModule,
   ],
   controllers: [AppController],
   providers: [AppService],

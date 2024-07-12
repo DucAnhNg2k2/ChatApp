@@ -11,11 +11,13 @@ export class AppController {
   }
 
   // Các API cần thiết cho chat-service
-  // Lấy toàn bộ các cuộc trò chuyện(Phân trang)
-  // Lấy thông tin chi tiết 1 cuộc trò chuyện
-  // Lây tin nhắn trong 1 cuộc trò chuyện(Phân trang)
-  // Gửi tin nhắn trong 1 cuộc trò chuyện
-  // Tạo mới 1 cuộc trò chuyện
+  /*
+    - Lấy toàn bộ các cuộc trò chuyện(Phân trang)
+    - Lấy thông tin chi tiết 1 cuộc trò chuyện
+    - Lây tin nhắn trong 1 cuộc trò chuyện(Phân trang)
+    - Gửi tin nhắn trong 1 cuộc trò chuyện
+    - Tạo mới 1 cuộc trò chuyện
+  */
 
   @Get('')
   getConversations() {
