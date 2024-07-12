@@ -15,7 +15,7 @@ const whiteListEndPoint = [
 const proxyToAuthService = ['auth'];
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { cors: true });
   const configService = app.get<ConfigService>(ConfigService);
   const port = configService.get(Server.SERVER_PORT) || 3000;
   console.log('gateway-service. Listening port:', port);
@@ -27,11 +27,12 @@ async function bootstrap() {
 
   // Middleware to verify token
   app.use(async (req: Request, res: Response, next: NextFunction) => {
-    if (whiteListEndPoint.includes(req.path)) {
-      console.log('White list endpoint:', req.path);
-      return next();
-    }
     try {
+      if (whiteListEndPoint.includes(req.path)) {
+        console.log('White list endpoint:', req.path);
+        next();
+        return;
+      }
       const bearerToken = req.headers?.['authorization'];
       if (!bearerToken) {
         res.status(401).send('Unauthorized');
@@ -47,9 +48,10 @@ async function bootstrap() {
         res.status(401).send('Unauthorized');
       }
 
-      delete req.headers['user'];
-      req.headers['user'] = JSON.stringify(user);
+      delete req['user'];
+      req['user'] = JSON.stringify(user);
       next();
+      return;
     } catch (error) {
       res.status(401).send('Unauthorized');
     }

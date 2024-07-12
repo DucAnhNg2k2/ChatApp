@@ -22,4 +22,5 @@ export class UserReq {
 
 export const PATTERN = {
   VERIFY_AUTH: 'VERIFY_AUTH',
+  MAP_TO_MEMBER_CHAT: 'MAP_TO_MEMBER_CHAT',
 };
