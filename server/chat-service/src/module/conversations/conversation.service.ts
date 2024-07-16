@@ -1,11 +1,12 @@
-import { ConversationCreateDto } from './dto/conversation-create.dto';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { UserReq } from 'src/const/const';
-import { User } from 'src/decorators/user.decorator';
 import { Conversations } from 'src/schema/conversation.schema';
+import { Members } from 'src/schema/member.schema';
 import { MemberService } from '../members/member.service';
+import { ConversationCreateDto } from './dto/conversation-create.dto';
+import { ConversationGetDto } from './dto/conversation-get.dto';
 
 @Injectable()
 export class ConversationService {
@@ -17,21 +18,72 @@ export class ConversationService {
 
   async getListConversation() {
     const conversations = await this.conversationModel.find().exec();
-    console.log(conversations);
     return conversations;
+  }
+
+  async getConversation(user: UserReq, query: ConversationGetDto) {
+    const conversation = await this.conversationModel
+      .aggregate([
+        {
+          $lookup: {
+            from: 'members',
+            localField: 'members',
+            foreignField: '_id',
+            as: 'members',
+          },
+        },
+        {
+          $lookup: {
+            from: 'messages',
+            localField: 'lastMessage',
+            foreignField: '_id',
+            as: 'messages',
+          },
+        },
+      ])
+      .exec();
+
+    // Not exist -> Create mock conversation
+    if (!conversation.length) {
+      const member: Members = await this.memberService.findByIdOrFail(
+        query.memberId,
+      );
+      const mock = {
+        name: member.name,
+      };
+      return mock;
+    }
+
+    const member = (conversation[0].members as Members[]).find(
+      (member: Members) => member.userId !== user.id,
+    );
+    return {
+      ...conversation[0],
+      name: member.name,
+    };
   }
 
   async createConversation(
     user: UserReq,
     conversationCreateDto: ConversationCreateDto,
   ) {
-    const { userId } = conversationCreateDto;
-    return this.memberService.findByUserId(userId);
-    // const conversation = new this.conversationModel({
-    //   name: 'New Conversation',
-    //   members: ['1', '2'],
-    // });
-    // await conversation.save();
-    // return conversation;
+    const getConversation = await this.getConversation(
+      user,
+      conversationCreateDto,
+    );
+    if (getConversation) {
+      throw new Error('Conversation already exist');
+    }
+
+    const { memberId } = conversationCreateDto;
+    const [member, curMember] = await Promise.all([
+      this.memberService.findByIdOrFail(memberId),
+      this.memberService.findByUserIdOrFail(user.id),
+    ]);
+    const conversation = new this.conversationModel({
+      members: [curMember, member],
+    });
+    await conversation.save();
+    return { conversation, name: member.name };
   }
 }

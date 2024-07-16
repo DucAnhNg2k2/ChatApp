@@ -1,11 +1,17 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { ProfileDTO } from "../../type/ProfileDTO";
+import { ProfileType } from "../../type/profile-type";
 
 export interface interfaceAuth {
-  data: ProfileDTO;
+  data: ProfileType;
 }
 const initProfileSlice: interfaceAuth = {
-  data: {},
+  data: {
+    id: 0,
+    userId: 0,
+    name: "",
+    address: "",
+    avatar: "",
+  },
 };
 
 const ProfileSlice = createSlice({

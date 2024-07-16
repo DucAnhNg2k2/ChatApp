@@ -1,23 +1,46 @@
 import instanceAxios, { endPointAuth } from ".";
-import { ProfileDTO } from "../type/ProfileDTO";
+import { ProfileType } from "../type/profile-type";
 import { ResponseType } from "../type/response.type";
 import { UserType } from "../type/user-type.enum";
 
 const endPoint = {
-  getProfile: "/get-profile",
+  userProfile: "/user-profile",
   getProfileById: "/get",
   searchProfile: "/search-profile",
   register: "/register",
   login: "/login",
   updateProfile: "/update",
+  members: "/members",
 };
 
-const requestGetProfile = (token: string) => {
-  return instanceAxios.get(endPointAuth + "/get-profile", {
-    headers: {
-      Authorization: `Bearer ${token}`,
+interface ResponseProfile {
+  id: number;
+  userId: number;
+  name: string;
+  address: string;
+}
+const requestGetProfile = (token: string): Promise<ResponseType<ResponseProfile>> => {
+  return instanceAxios
+    .get(endPoint.userProfile, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    .then(res => res.data);
+};
+
+const requestUpdateProfile = (token: string, body: ProfileType) => {
+  return instanceAxios.put(
+    endPointAuth,
+    {
+      ...body,
     },
-  });
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 };
 
 const requestProfileGetById = (token: string, uid: number) => {
@@ -28,12 +51,19 @@ const requestProfileGetById = (token: string, uid: number) => {
   });
 };
 
-const requestGetUser = (token: string, name: string) => {
-  return instanceAxios.get(endPointAuth + `/search-profile?name=${name}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+interface ResponseMembers {
+  _id: string;
+  userId: number;
+  name: string;
+}
+const requestGetMembers = (token: string, name: string): Promise<ResponseType<ResponseMembers[]>> => {
+  return instanceAxios
+    .get(endPoint.members + `/get?name=${name}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    .then(res => res.data);
 };
 
 const requestRegister = (username: string, password: string) => {
@@ -57,18 +87,5 @@ const requestLogin = (username: string, password: string, userType?: UserType): 
     .then(res => res.data);
 };
 
-const requestUpdateProfile = (token: string, body: ProfileDTO) => {
-  return instanceAxios.post(
-    endPointAuth + "/update",
-    {
-      ...body,
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-};
 export { requestRegister, requestLogin };
-export { requestGetProfile, requestGetUser, requestProfileGetById, requestUpdateProfile };
+export { requestGetProfile, requestGetMembers, requestProfileGetById, requestUpdateProfile };

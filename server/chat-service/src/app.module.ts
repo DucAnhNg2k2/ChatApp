@@ -6,6 +6,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { MemberModule } from './module/members/member.module';
 import { ConversationModule } from './module/conversations/conversation.module';
 import { MessageModule } from './module/messages/message.module';
+import { WebsocketModule } from './module/websocket/websocket.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { MessageModule } from './module/messages/message.module';
     MemberModule,
     ConversationModule,
     MessageModule,
+    WebsocketModule,
   ],
   controllers: [AppController],
   providers: [AppService],

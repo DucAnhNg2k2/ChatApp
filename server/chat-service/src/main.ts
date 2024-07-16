@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { InterceptorResponse } from './interceptors/response.interceptor';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { HttpExceptionResponse } from './exceptions/response.exception';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -24,8 +25,10 @@ async function bootstrap() {
     },
   });
 
+  app.useGlobalPipes(new ValidationPipe());
   app.useGlobalInterceptors(new InterceptorResponse());
   app.useGlobalFilters(new HttpExceptionResponse());
+
   await app.startAllMicroservices();
   await app.listen(port);
 }

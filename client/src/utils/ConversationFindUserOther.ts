@@ -1,16 +1,16 @@
 import { HOST_SERVER, PORT_SERVER } from "../config/config";
-import { User } from "../type/UserDTO";
+import { MembersChat } from "../type/member-type";
 
 // Find User Other In Conversation
-const ConversationFindUserOther = (users: User[], uid: number | undefined) => {
-  return users.find(item => item.id !== uid);
+const ConversationFindUserOther = (users: MembersChat[], uid: number | undefined) => {
+  return users.find(item => item.userId !== uid);
 };
 
-const ConversationFindUserOtherImage = (users: User[], uid: number | undefined) => {
-  const user = users.find(item => item.id !== uid);
+const ConversationFindUserOtherImage = (users: MembersChat[], uid: number | undefined) => {
+  const user = users.find(item => item.userId !== uid);
   if (user) {
-    const { avatar } = user;
-    return avatar?.includes("https") ? avatar : `http://${HOST_SERVER}:${PORT_SERVER}/api/uploads/get/${avatar}`;
+    // const { avatar } = user;
+    // return avatar?.includes("https") ? avatar : `http://${HOST_SERVER}:${PORT_SERVER}/api/uploads/get/${avatar}`;
   }
 };
 

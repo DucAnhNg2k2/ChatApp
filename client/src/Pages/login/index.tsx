@@ -1,5 +1,5 @@
 import { HttpStatusCode } from "axios";
-import { IdTokenResult, UserCredential, signInWithPopup } from "firebase/auth";
+import { IdTokenResult, signInWithPopup, UserCredential } from "firebase/auth";
 import React, { useState } from "react";
 import ReactLoading from "react-loading";
 import { useDispatch } from "react-redux";
@@ -7,18 +7,17 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { verifyToken } from "../../api";
-import { requestGetProfile, requestLogin, requestRegister } from "../../api/auth";
+import { requestGetProfile, requestLogin } from "../../api/auth";
 import Modal from "../../Component/Modal";
-import { toastObject } from "../../config/toast";
-import { setProfile } from "../../Store/Profile";
-import { setValueToken } from "../../Store/token";
-import { ProfileDTO } from "../../type/ProfileDTO";
-import { ResponseType } from "../../type/response.type";
-import "./login.scss";
 import { auth, FBProvider, GGProvider } from "../../config/firebase";
-import { UserType } from "../../type/user-type.enum";
+import { toastObject } from "../../config/toast";
 import { isResponseSuccess } from "../../helper/reponse.success";
 import { RouterName } from "../../router";
+import { setValueToken } from "../../Store/token";
+import { ResponseType } from "../../type/response.type";
+import { UserType } from "../../type/user-type.enum";
+import "./login.scss";
+import { setProfile } from "../../Store/Profile";
 
 const Login = () => {
   const refLogin = React.useRef<HTMLFormElement>(null);
@@ -40,13 +39,8 @@ const Login = () => {
       if (res.statusCode === HttpStatusCode.Ok) {
         const { token } = res.data;
         dispatch(setValueToken(token));
-        const resProfile: ResponseType = (await requestGetProfile(token)).data;
-        if (resProfile.statusCode === HttpStatusCode.Ok) {
-          const profile: ProfileDTO = resProfile.data;
-          dispatch(setProfile(profile));
-          toast.success("Đăng nhập thành công !!", toastObject);
-          navigate("/conversation");
-        }
+        toast.success("Đăng nhập thành công !!", toastObject);
+        navigate("/conversation");
       } else {
         toast.error("Đăng nhập thất bại !!", toastObject);
       }
@@ -107,6 +101,13 @@ const Login = () => {
         const accessToken = responseLoginData?.accessToken;
         if (accessToken) {
           dispatch(setValueToken(accessToken));
+          const responseProfile = await requestGetProfile(accessToken);
+          if (isResponseSuccess(responseProfile)) {
+            const profile = responseProfile.data;
+            if (profile) {
+              dispatch(setProfile(profile));
+            }
+          }
           navigate(RouterName.CONVERSATION);
           toast.success("Đăng nhập thành công !!", toastObject);
         }
@@ -122,32 +123,32 @@ const Login = () => {
   };
 
   const handleClickRegister = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    try {
-      if (passwordRegister !== confirmPasswordRegister) {
-        toast.error("Mật khẩu không trùng khớp");
-        return;
-      }
-      setIsLoading(true);
-      const res: ResponseType = (await requestRegister(usernameRegister, passwordRegister)).data;
-      if (res.statusCode === HttpStatusCode.Ok) {
-        const { token } = res.data;
-        dispatch(setValueToken(token));
-        const resProfile: ResponseType = (await requestGetProfile(token)).data;
-        if (resProfile.statusCode === HttpStatusCode.Ok) {
-          const profile: ProfileDTO = resProfile.data;
-          dispatch(setProfile(profile));
-          toast.success("Đăng kí thành công !!", toastObject);
-          navigate("/conversation");
-        }
-      } else {
-        toast.error("Đăng kí thất bại !!", toastObject);
-      }
-      setIsLoading(false);
-    } catch (err) {
-      toast.error("Đăng kí thất bại !!", toastObject);
-      toast.error(JSON.stringify(err), toastObject);
-      setIsLoading(false);
-    }
+    // try {
+    //   if (passwordRegister !== confirmPasswordRegister) {
+    //     toast.error("Mật khẩu không trùng khớp");
+    //     return;
+    //   }
+    //   setIsLoading(true);
+    //   const res: ResponseType = (await requestRegister(usernameRegister, passwordRegister)).data;
+    //   if (res.statusCode === HttpStatusCode.Ok) {
+    //     const { token } = res.data;
+    //     dispatch(setValueToken(token));
+    //     const resProfile: ResponseType = (await requestGetProfile(token)).data;
+    //     if (resProfile.statusCode === HttpStatusCode.Ok) {
+    //       const profile: ProfileDTO = resProfile.data;
+    //       dispatch(setProfile(profile));
+    //       toast.success("Đăng kí thành công !!", toastObject);
+    //       navigate("/conversation");
+    //     }
+    //   } else {
+    //     toast.error("Đăng kí thất bại !!", toastObject);
+    //   }
+    //   setIsLoading(false);
+    // } catch (err) {
+    //   toast.error("Đăng kí thất bại !!", toastObject);
+    //   toast.error(JSON.stringify(err), toastObject);
+    //   setIsLoading(false);
+    // }
   };
 
   return (

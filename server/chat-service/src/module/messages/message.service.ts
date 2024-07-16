@@ -9,4 +9,9 @@ export class MessageService {
     @InjectModel(Messages.name, 'chat-service')
     private messageModel: Model<Messages>,
   ) {}
+
+  async createMessage(data: any) {
+    const message = new this.messageModel(data);
+    return message.save();
+  }
 }

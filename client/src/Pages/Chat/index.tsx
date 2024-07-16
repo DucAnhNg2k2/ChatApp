@@ -1,61 +1,67 @@
 import { HttpStatusCode } from "axios";
 import lodash from "lodash";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import ReactLoading from "react-loading";
 import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { requestConversationDetail, requestConversationGetAll, requestGetMessage } from "../../api";
-import { requestGetUser } from "../../api/auth";
-import { requestConversationCreate, requestConversationGetByUid } from "../../api/conversation";
+import { requestConversationDetail, requestGetMessage } from "../../api";
+import { requestGetMembers } from "../../api/auth";
+import { requestConversationCreate, requestConversationGet } from "../../api/chat";
 import { requestUploadBase64 } from "../../api/upload";
 import Input from "../../Component/Input";
 import Loading from "../../Component/Loading";
 import Message from "../../Component/Message";
 import Modal from "../../Component/Modal";
 import UpdateProfile from "../../Component/UpdateProfile";
-import { HOST_SERVER, PORT_SERVER } from "../../config/config";
-import { toastObject } from "../../config/toast";
+import { isResponseSuccess } from "../../helper/reponse.success";
 import { RootState } from "../../Store";
-import { ConversationDetailDTO } from "../../type/ConversationDetailDTO";
+import { ConversationType } from "../../type/conversation-type";
 import { ConversationGetAllDTO } from "../../type/ConversationGetAllDTO";
+import { MembersChat } from "../../type/member-type";
 import { MessageDTO } from "../../type/MessageDTO";
 import { ResponseType } from "../../type/response.type";
-import { User } from "../../type/UserDTO";
 import { AvatarDefault } from "../../utils/AvatarUtil";
-import { CheckProfile } from "../../utils/CheckProfile";
-import { ConversationFindIndexById } from "../../utils/ConversationFindIndexById";
-import { ConversationFindUserOther, ConversationFindUserOtherImage } from "../../utils/ConversationFindUserOther";
 import "./chat.scss";
+import { colors } from "../../const/colors";
 
 const SIZE = 15;
 const Conversation = () => {
   const token = useSelector((state: RootState) => state.token).value;
   const profile = useSelector((state: RootState) => state.profile).data;
-  const [isLoading, setIsLoading] = React.useState<boolean>(true);
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
   // Detail-Conversation List-members[]
-  const [conversationDetailDTO, setConversationDetailDTO] = React.useState<ConversationDetailDTO>();
+  const [conversation, setConversation] = useState<ConversationType>();
   // GetAll-Conversations
   const [conversationGetAllDTO, setConversationGetAllDTO] = React.useState<ConversationGetAllDTO[]>([]);
   // Message[] of Detail-Conversation
   const [messageDTO, setMessageDTO] = React.useState<MessageDTO[]>([]);
   // Input Text
   const [text, setText] = React.useState<string>("");
-  const [isLoadingSearch, setIsLoadingSearch] = React.useState<boolean>(true);
-  // Name of Profile-User
-  const [nameSearch, setNameSearch] = React.useState<string>("");
-  // Search Profile-User
-  const [resultSearch, setResultSearchDTO] = React.useState<User[]>([]);
+
+  // Search
+  const [isLoadingSearch, setIsLoadingSearch] = useState(true);
+  const [nameSearch, setNameSearch] = useState("");
+  const [members, setMembers] = useState<MembersChat[]>([]);
+
   // Socket - Page - HasMore
   const [socket, setSocket] = React.useState<WebSocket>();
   const [page, setPage] = React.useState<number>(0);
   const [hasMore, setHasMore] = React.useState<boolean>(true);
-  const [isVisible, setIsVisible] = React.useState<boolean>(CheckProfile(profile?.avatar, profile?.displayName));
+  const [isVisiblePopUpProfile, setIsVisiblePopUpProfile] = useState<boolean>(false);
 
   const refFile = React.useRef<HTMLInputElement>(null);
   const refConversation = React.useRef<HTMLDivElement>(null);
 
+  const loadData = async () => {
+    try {
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  useEffect(() => {
+    loadData();
+  }, []);
   // // Get Conversation-All[]
   // React.useEffect(() => {
   //   try {
@@ -97,60 +103,60 @@ const Conversation = () => {
   // Receive Text on socket
   const handleOnMessage = React.useCallback(
     async (event: MessageEvent<any>) => {
-      const mess: MessageDTO = JSON.parse(event.data);
-      const { id, conversationId, text, type, createTime, userId } = mess;
-      if (!conversationId || !userId) {
-        return;
-      }
-      const index = ConversationFindIndexById(conversationId, conversationGetAllDTO);
-      if (index == -1) {
-        // Insert to 0
-        const stateMess = { ...mess };
-        const resC: ResponseType = (await requestConversationDetail(conversationId, token)).data;
-        if (resC.statusCode === HttpStatusCode.Ok) {
-          const resCData: ConversationDetailDTO = resC.data;
-          const user = resCData.users.find(item => item.id !== profile.id);
-          if (user) {
-            const { avatar, displayName } = user;
-            stateMess.avatar = avatar;
-            stateMess.displayName = displayName;
-          }
-        }
-        const stateConversation: ConversationGetAllDTO = {
-          id: conversationId,
-          messageDTO: stateMess,
-        };
-        setConversationGetAllDTO(pre => [stateConversation, ...pre]);
-      } else {
-        // Swap ( 0 - index )
-        const newState = [...conversationGetAllDTO];
-        const tmpState = conversationGetAllDTO[index];
-        newState[index] = newState[0];
-        newState[0] = tmpState;
-        // Update new Message
-        newState[0].messageDTO.type = type;
-        newState[0].messageDTO.text = text;
-        newState[0].messageDTO.createTime = createTime;
-        newState[0].messageDTO.id = id;
-        newState[0].messageDTO.userId = userId;
-        setConversationGetAllDTO(newState);
-      }
-      if (conversationDetailDTO && conversationDetailDTO.id == conversationId) {
-        const newMess = [{ ...mess }, ...messageDTO];
-        setMessageDTO(newMess);
-      }
+      // const mess: MessageDTO = JSON.parse(event.data);
+      // const { id, conversationId, text, type, createTime, userId } = mess;
+      // if (!conversationId || !userId) {
+      //   return;
+      // }
+      // const index = ConversationFindIndexById(conversationId, conversationGetAllDTO);
+      // if (index == -1) {
+      //   // Insert to 0
+      //   const stateMess = { ...mess };
+      //   const resC: ResponseType = (await requestConversationDetail(conversationId, token)).data;
+      //   if (resC.statusCode === HttpStatusCode.Ok) {
+      //     const resCData: ConversationDetailDTO = resC.data;
+      //     const user = resCData.users.find(item => item.id !== profile.id);
+      //     if (user) {
+      //       const { avatar, displayName } = user;
+      //       stateMess.avatar = avatar;
+      //       stateMess.displayName = displayName;
+      //     }
+      //   }
+      //   const stateConversation: ConversationGetAllDTO = {
+      //     id: conversationId,
+      //     messageDTO: stateMess,
+      //   };
+      //   setConversationGetAllDTO(pre => [stateConversation, ...pre]);
+      // } else {
+      //   // Swap ( 0 - index )
+      //   const newState = [...conversationGetAllDTO];
+      //   const tmpState = conversationGetAllDTO[index];
+      //   newState[index] = newState[0];
+      //   newState[0] = tmpState;
+      //   // Update new Message
+      //   newState[0].messageDTO.type = type;
+      //   newState[0].messageDTO.text = text;
+      //   newState[0].messageDTO.createTime = createTime;
+      //   newState[0].messageDTO.id = id;
+      //   newState[0].messageDTO.userId = userId;
+      //   setConversationGetAllDTO(newState);
+      // }
+      // if (conversationDetailDTO && conversationDetailDTO.id == conversationId) {
+      //   const newMess = [{ ...mess }, ...messageDTO];
+      //   setMessageDTO(newMess);
+      // }
     },
-    [conversationDetailDTO, messageDTO, conversationGetAllDTO]
+    [conversation, messageDTO, conversationGetAllDTO]
   );
 
   // Send Text on socket
   const handleSendMessage = async (type: "text" | "image", message: string) => {
     try {
-      if ((type === "image" || (type === "text" && text.length > 0)) && conversationDetailDTO?.id) {
+      if ((type === "image" || (type === "text" && text.length > 0)) && conversation?._id) {
         const mess: object = {
           type,
           message,
-          to: conversationDetailDTO.id,
+          to: conversation._id,
         };
         if (socket) {
           socket.send(JSON.stringify(mess));
@@ -174,7 +180,7 @@ const Conversation = () => {
     if (refConversation && refConversation.current) {
       refConversation.current.style.left = "0%";
     }
-  }, [conversationDetailDTO]);
+  }, [conversation]);
 
   // Handle Search-Profile
   const handleChangeSearchLodash = React.useMemo(() => {
@@ -183,75 +189,63 @@ const Conversation = () => {
     }, 300);
   }, []);
   const handleSearchUser = async (name: string) => {
+    setIsLoadingSearch(true);
     try {
-      setIsLoadingSearch(true);
-      const res: ResponseType = (await requestGetUser(token, name)).data;
-      if (res.statusCode === HttpStatusCode.Ok) {
-        setResultSearchDTO(res.data);
+      const resMembers = await requestGetMembers(token, name);
+      if (isResponseSuccess(resMembers) && resMembers.data) {
+        setMembers(resMembers.data);
       }
-      setIsLoadingSearch(false);
     } catch (err) {
-      setIsLoadingSearch(false);
       console.log(err);
     }
+    setIsLoadingSearch(false);
   };
   const handleChangeSearch = (e: any) => {
     const name: string = e.target.value;
     setNameSearch(name);
-    name.length === 0 ? setResultSearchDTO([]) : handleChangeSearchLodash(name);
+    name.length === 0 ? setMembers([]) : handleChangeSearchLodash(name);
   };
-  const handleClickProfile = async ({ id }: User) => {
+
+  // Handle Member
+  const handleClickMember = async (member: MembersChat) => {
+    setIsLoading(true);
     try {
-      const res: ResponseType = (await requestConversationGetByUid(token, id)).data;
-      setResultSearchDTO([]);
-      setNameSearch("");
-      // Not found -> Create New
-      if (res.statusCode === HttpStatusCode.BadRequest) {
-        console.log("ConversationNotFound");
-        console.log(res.message);
-        const resCreate: ResponseType = (await requestConversationCreate(token, id)).data;
-        if (resCreate.statusCode === HttpStatusCode.Ok) {
-          const data: ConversationDetailDTO = resCreate.data;
-          setConversationDetailDTO(data);
-          setHasMore(false);
-          setMessageDTO([]);
-        } else {
-          // Error ...
-        }
-      } else if (res.statusCode === HttpStatusCode.Ok) {
-        const data: ConversationDetailDTO = res.data;
-        setConversationDetailDTO(data);
-        const resMessage: ResponseType = (await requestGetMessage(data.id, token, 0, SIZE)).data;
-        if (resMessage.statusCode === HttpStatusCode.Ok) {
-          setMessageDTO(resMessage.data);
-        }
+      const res = await requestConversationGet(token, member);
+      if (isResponseSuccess(res) && res.data) {
+        const data: ConversationType = res.data;
+        setConversation(data);
+        setHasMore(false);
+        setMessageDTO([]);
+        console.log(res.data);
       }
+      setNameSearch("");
     } catch (err) {}
+    setIsLoading(false);
   };
 
   // Click Conversation-Detail in Conversation-GetAll
   const handleClickConversation = async (item: ConversationGetAllDTO) => {
     try {
-      if (conversationDetailDTO != null && conversationDetailDTO.id == item.id) {
-        return;
-      }
-      if (isLoading) {
-        return;
-      }
-      // Click Conversation-Detail
-      const cid = item.id;
-      setIsLoading(true);
-      const resChat: ResponseType = (await requestConversationDetail(cid, token)).data;
-      const resMessage: ResponseType = (await requestGetMessage(cid, token, 0, SIZE)).data;
-      if (resChat.statusCode === HttpStatusCode.Ok) {
-        setConversationDetailDTO(resChat.data);
-      }
-      if (resMessage.statusCode === HttpStatusCode.Ok) {
-        setMessageDTO(resMessage.data);
-      }
-      setIsLoading(false);
-      setHasMore(true);
-      setPage(0);
+      // if (conversationDetailDTO != null && conversationDetailDTO.id == item.id) {
+      //   return;
+      // }
+      // if (isLoading) {
+      //   return;
+      // }
+      // // Click Conversation-Detail
+      // const cid = item.id;
+      // setIsLoading(true);
+      // const resChat: ResponseType = (await requestConversationDetail(cid, token)).data;
+      // const resMessage: ResponseType = (await requestGetMessage(cid, token, 0, SIZE)).data;
+      // if (resChat.statusCode === HttpStatusCode.Ok) {
+      //   setConversationDetailDTO(resChat.data);
+      // }
+      // if (resMessage.statusCode === HttpStatusCode.Ok) {
+      //   setMessageDTO(resMessage.data);
+      // }
+      // setIsLoading(false);
+      // setHasMore(true);
+      // setPage(0);
     } catch (err) {
       console.log(err);
     }
@@ -259,21 +253,21 @@ const Conversation = () => {
 
   const handleNextDataMessage = async () => {
     try {
-      console.log("Fetch More Message !!");
-      const cid = conversationDetailDTO?.id;
-      if (cid) {
-        const newPage = page + 1;
-        const resMessage: ResponseType = (await requestGetMessage(cid, token, newPage, SIZE)).data;
-        if (resMessage.statusCode === 200) {
-          const data: MessageDTO[] = resMessage.data;
-          if (data.length === 0) {
-            setHasMore(false);
-          } else {
-            setMessageDTO([...messageDTO, ...data]);
-            setPage(newPage);
-          }
-        }
-      }
+      // console.log("Fetch More Message !!");
+      // const cid = conversationDetailDTO?.id;
+      // if (cid) {
+      //   const newPage = page + 1;
+      //   const resMessage: ResponseType = (await requestGetMessage(cid, token, newPage, SIZE)).data;
+      //   if (resMessage.statusCode === 200) {
+      //     const data: MessageDTO[] = resMessage.data;
+      //     if (data.length === 0) {
+      //       setHasMore(false);
+      //     } else {
+      //       setMessageDTO([...messageDTO, ...data]);
+      //       setPage(newPage);
+      //     }
+      //   }
+      // }
     } catch (err) {
       console.log(err);
     }
@@ -320,12 +314,12 @@ const Conversation = () => {
       <div className="chat-container">
         <div className="chat-list">
           <div className="chat-profile">
-            <img src={AvatarDefault(profile.avatar)} className="chat-profile-img" alt="" />
+            {/* <img src="./" className="chat-profile-img" alt="" /> */}
             <div>
-              <p className="chat-profile-name"> {profile.displayName} </p>
-              <button className="chat-profile-edit" onClick={() => setIsVisible(true)}>
-                <i className="fa-solid fa-user-pen"></i>
-              </button>
+              <p className="chat-profile-name"> {profile.name} </p>
+              {/* <button className="chat-profile-edit" onClick={() => (true)}> */}
+              <i className="fa-solid fa-user-pen"></i>
+              {/* </button> */}
             </div>
           </div>
           <div className="chat-search">
@@ -341,11 +335,11 @@ const Conversation = () => {
                 <Loading />
               </div>
             ) : (
-              resultSearch.map((user: User, index: number) => (
-                <div className="chat-list-detail" key={user.id} onClick={() => handleClickProfile(user)}>
-                  <img src={AvatarDefault(user.avatar)} className="chat-list-detail-image" alt="" />
+              members.map((user: MembersChat, index: number) => (
+                <div className="chat-list-detail" key={user._id} onClick={() => handleClickMember(user)}>
+                  {/* <img src={AvatarDefault(user.avatar)} className="chat-list-detail-image" alt="" /> */}
                   <div>
-                    <p className="chat-list-detail-name">{user.displayName}</p>
+                    <p className="chat-list-detail-name">{user.name}</p>
                   </div>
                 </div>
               ))
@@ -367,7 +361,7 @@ const Conversation = () => {
             })}
         </div>
         <div className="chat-divide" />
-        {conversationDetailDTO === undefined ? (
+        {!conversation ? (
           <div className="chat-null">Hãy chọn một đoạn chat</div>
         ) : (
           <div className="chat-detail" ref={refConversation}>
@@ -375,13 +369,13 @@ const Conversation = () => {
               <button className="chat-detail-arrow-left hidden" onClick={handleClickArrowLeft}>
                 <i className="fa-solid fa-arrow-left"></i>
               </button>
-              <img src={ConversationFindUserOtherImage(conversationDetailDTO.users, profile.id)} className="chat-detail-image" alt="" />
-              <p className="chat-detail-name">{ConversationFindUserOther(conversationDetailDTO.users, profile.id)?.displayName}</p>
+              {/* <img src={ConversationFindUserOtherImage(conversationDetailDTO.users, profile.id)} className="chat-detail-image" alt="" /> */}
+              <p className="chat-detail-name">{conversation.name}</p>
             </div>
             <div className="chat-detail-content">
               {isLoading ? (
                 <div className="chat-detail-load">
-                  <ReactLoading type={"spin"} color="#000" width={30} height={30} />
+                  <ReactLoading type={"spin"} color={colors.black} width={30} height={30} />
                 </div>
               ) : (
                 <div id="scrollableDiv" className="chat-detail-message">
@@ -394,11 +388,11 @@ const Conversation = () => {
                     hasMore={hasMore}
                     loader={
                       <div className="chat-detail-load">
-                        <ReactLoading type={"spin"} color="#000" width={30} height={30} />
+                        <ReactLoading type={"spin"} color={colors.black} width={30} height={30} />
                       </div>
                     }>
                     {messageDTO.map((item: MessageDTO, index: number) => (
-                      <Message users={conversationDetailDTO?.users} item={item} key={item.id} />
+                      <Message members={conversation.members} item={item} key={item.id} />
                     ))}
                   </InfiniteScroll>
                 </div>
@@ -417,7 +411,7 @@ const Conversation = () => {
           </div>
         )}
       </div>
-      {isVisible && <UpdateProfile setIsVisible={setIsVisible} />}
+      {isVisiblePopUpProfile && <UpdateProfile setIsVisible={setIsVisiblePopUpProfile} />}
     </Modal>
   );
 };

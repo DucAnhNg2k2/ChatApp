@@ -13,7 +13,7 @@ const whiteListEndPoint = [
   '/auth/resend-otp',
 ];
 const proxyToAuthService = ['auth', 'user-profile'];
-const proxyToChatService = ['conversations', 'messages'];
+const proxyToChatService = ['conversations', 'messages', 'members'];
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -37,30 +37,29 @@ async function bootstrap() {
     try {
       if (whiteListEndPoint.includes(req.path)) {
         console.log('White list endpoint:', req.path);
-        next();
-        return;
+        return next();
       }
+
       const bearerToken = req.headers?.['authorization'];
       if (!bearerToken) {
-        res.status(401).send('Unauthorized');
+        return res.status(401).send('Unauthorized');
       }
 
       const token = bearerToken.split(' ')[1];
       if (!token) {
-        res.status(401).send('Unauthorized');
+        return res.status(401).send('Unauthorized');
       }
 
       const user = await appService.verifyHeaderToken(token);
       if (!user) {
-        res.status(401).send('Unauthorized');
+        return res.status(401).send('Unauthorized');
       }
 
       delete req.headers['user'];
       req.headers['user'] = JSON.stringify(user);
       next();
-      return;
     } catch (error) {
-      res.status(401).send('Unauthorized');
+      return res.status(401).send('Unauthorized');
     }
   });
 

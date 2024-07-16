@@ -1,7 +1,7 @@
 import { IsString, IsNotEmpty, IsNumberString } from 'class-validator';
 
 export class ConversationCreateDto {
-  @IsNumberString()
+  @IsString()
   @IsNotEmpty()
-  userId: number;
+  memberId: string;
 }
