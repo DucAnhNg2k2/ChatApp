@@ -93,8 +93,8 @@ export class WebsocketService
     // }
 
     const data = this.messageService.createMessage(
-      body,
       this.clients[client.id],
+      body,
     );
     return this.server.send(SUBSCRIBE_MESSAGE.RECEIVE_MESSAGE, data);
   }

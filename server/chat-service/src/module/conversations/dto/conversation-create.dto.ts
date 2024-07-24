@@ -1,6 +1,6 @@
 import { IsString, IsNotEmpty, IsNumberString } from 'class-validator';
 
-export class ConversationCreateDto {
+export class ConversationCreateByMemberDto {
   @IsString()
   @IsNotEmpty()
   memberId: string;

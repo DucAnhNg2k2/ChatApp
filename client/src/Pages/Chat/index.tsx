@@ -6,7 +6,7 @@ import ReactLoading from "react-loading";
 import { useSelector } from "react-redux";
 import "react-toastify/dist/ReactToastify.css";
 import { requestGetMembers } from "../../api/auth";
-import { requestConversationGet } from "../../api/chat";
+import { requestConversationGetById, requestConversationGetByMember, requestConversationPage } from "../../api/chat";
 import { requestUploadBase64 } from "../../api/upload";
 import Input from "../../Component/Input";
 import Loading from "../../Component/Loading";
@@ -17,28 +17,27 @@ import { colors } from "../../const/colors";
 import { isResponseSuccess } from "../../helper/reponse.success";
 import { RootState } from "../../Store";
 import { ConversationType } from "../../type/conversation-type";
-import { ConversationGetAllDTO } from "../../type/ConversationGetAllDTO";
 import { MembersChat } from "../../type/member-type";
 import { MessageDTO } from "../../type/MessageDTO";
 import { ResponseType } from "../../type/response.type";
 import { AvatarDefault } from "../../utils/AvatarUtil";
 import "./chat.scss";
+import { ConversationListType } from "../../type/conversation-list-type";
 
 const SIZE = 15;
 const Conversation = () => {
   const token = useSelector((state: RootState) => state.token).value;
   const profile = useSelector((state: RootState) => state.profile).data;
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  // Detail-Conversation List-members[]
-  const [conversation, setConversation] = useState<ConversationType>();
-  // GetAll-Conversations
-  const [conversationGetAllDTO, setConversationGetAllDTO] = React.useState<ConversationGetAllDTO[]>([]);
+
   // Message[] of Detail-Conversation
   const [messageDTO, setMessageDTO] = React.useState<MessageDTO[]>([]);
   // Input Text
   const [text, setText] = React.useState<string>("");
 
-  // Search
+  const [conversation, setConversation] = useState<ConversationType>();
+  const [conversationList, setConversationList] = useState<ConversationListType[]>([]);
+
   const [isLoadingSearch, setIsLoadingSearch] = useState(true);
   const [nameSearch, setNameSearch] = useState("");
   const [members, setMembers] = useState<MembersChat[]>([]);
@@ -54,6 +53,11 @@ const Conversation = () => {
 
   const loadData = async () => {
     try {
+      const resListConversations = await requestConversationPage(token);
+      if (isResponseSuccess(resListConversations) && resListConversations.data) {
+        const dataListConversations = resListConversations.data;
+        setConversationList(dataListConversations);
+      }
     } catch (err) {
       console.log(err);
     }
@@ -61,19 +65,6 @@ const Conversation = () => {
   useEffect(() => {
     loadData();
   }, []);
-  // // Get Conversation-All[]
-  // React.useEffect(() => {
-  //   try {
-  //     requestConversationGetAll(token).then(response => {
-  //       const res: ResponseType = response.data;
-  //       if (res.statusCode === HttpStatusCode.Ok) {
-  //         setConversationGetAllDTO(res.data);
-  //       }
-  //     });
-  //   } catch (err) {
-  //     console.log(err);
-  //   }
-  // }, []);
 
   // // Connect socket
   // React.useEffect(() => {
@@ -145,7 +136,8 @@ const Conversation = () => {
       //   setMessageDTO(newMess);
       // }
     },
-    [conversation, messageDTO, conversationGetAllDTO]
+    // [conversation, messageDTO, conversationGetAllDTO]
+    []
   );
 
   // Send Text on socket
@@ -205,49 +197,31 @@ const Conversation = () => {
     name.length === 0 ? setMembers([]) : handleChangeSearchLodash(name);
   };
 
-  // Handle Member
   const handleClickMember = async (member: MembersChat) => {
     setIsLoading(true);
     try {
-      const res = await requestConversationGet(token, member);
+      const res = await requestConversationGetByMember(token, member);
       if (isResponseSuccess(res) && res.data) {
         const data: ConversationType = res.data;
         setConversation(data);
-        setHasMore(false);
-        setMessageDTO([]);
-        console.log(res.data);
       }
       setNameSearch("");
     } catch (err) {}
     setIsLoading(false);
   };
 
-  // Click Conversation-Detail in Conversation-GetAll
-  const handleClickConversation = async (item: ConversationGetAllDTO) => {
+  const handleClickConversation = async (item: ConversationListType) => {
+    setIsLoading(true);
     try {
-      // if (conversationDetailDTO != null && conversationDetailDTO.id == item.id) {
-      //   return;
-      // }
-      // if (isLoading) {
-      //   return;
-      // }
-      // // Click Conversation-Detail
-      // const cid = item.id;
-      // setIsLoading(true);
-      // const resChat: ResponseType = (await requestConversationDetail(cid, token)).data;
-      // const resMessage: ResponseType = (await requestGetMessage(cid, token, 0, SIZE)).data;
-      // if (resChat.statusCode === HttpStatusCode.Ok) {
-      //   setConversationDetailDTO(resChat.data);
-      // }
-      // if (resMessage.statusCode === HttpStatusCode.Ok) {
-      //   setMessageDTO(resMessage.data);
-      // }
-      // setIsLoading(false);
-      // setHasMore(true);
-      // setPage(0);
+      const res = await requestConversationGetById(token, item._id);
+      if (isResponseSuccess(res) && res.data) {
+        const data: ConversationType = res.data;
+        setConversation(data);
+      }
     } catch (err) {
       console.log(err);
     }
+    setIsLoading(false);
   };
 
   const handleNextDataMessage = async () => {
@@ -343,17 +317,16 @@ const Conversation = () => {
                 </div>
               ))
             ))}
-          {/* Default Conversation */}
-          {nameSearch.length === 0 &&
-            conversationGetAllDTO.map((item: ConversationGetAllDTO, index: number) => {
-              const { id, name, messageDTO } = item;
-              const { avatar, displayName, type, text, userId } = messageDTO;
+          {!nameSearch.length &&
+            conversationList.map((item: ConversationListType, index: number) => {
+              const { _id, name, messages } = item;
+              // const { avatar, displayName, type, text, userId } = messageDTO;
               return (
-                <div className="chat-list-detail" key={id} onClick={() => handleClickConversation(item)}>
-                  <img src={AvatarDefault(avatar)} className="chat-list-detail-image" alt="" />
+                <div className="chat-list-detail" key={_id} onClick={() => handleClickConversation(item)}>
+                  {/* <img src={AvatarDefault(avatar)} className="chat-list-detail-image" alt="" /> */}
                   <div>
-                    <p className="chat-list-detail-name">{displayName}</p>
-                    <p className="chat-list-detail-message">{`${userId === profile.id ? `Bạn: ${text}` : `${text}`}`}</p>
+                    <p className="chat-list-detail-name">{name}</p>
+                    {/* <p className="chat-list-detail-message">{`${userId === profile.id ? `Bạn: ${text}` : `${text}`}`}</p> */}
                   </div>
                 </div>
               );
