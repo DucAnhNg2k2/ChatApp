@@ -80,7 +80,7 @@ interface ResponseLogin {
 const requestLogin = (username: string, password: string, userType?: UserType): Promise<ResponseType<ResponseLogin>> => {
   return instanceAxios
     .post(endPointAuth + endPoint.login, {
-      username,
+      email: username,
       password,
       type: userType ?? UserType.EMAIL,
     })

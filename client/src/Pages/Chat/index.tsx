@@ -9,7 +9,7 @@ import { requestGetMembers } from "../../api/auth";
 import { requestConversationGetById, requestConversationGetByMember, requestConversationPage, requestMessageCreate, requestMessageGet } from "../../api/chat";
 import Input from "../../Component/Input";
 import Loading from "../../Component/Loading";
-import Message from "../../Component/Message";
+import Message from "../../Component/message";
 import Modal from "../../Component/Modal";
 import UpdateProfile from "../../Component/UpdateProfile";
 import { HOST_SERVER, PORT_SERVER_SOCKET, SUBSCRIBE_MESSAGE } from "../../config/config";

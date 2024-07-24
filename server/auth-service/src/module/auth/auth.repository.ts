@@ -12,11 +12,10 @@ export class AuthRepository {
   ) {}
 
   findOneByEmail(email: string): Promise<User> {
-    return this.usersRepository.findOne({
-      where: {
-        email,
-      },
-    });
+    return this.usersRepository
+      .createQueryBuilder('user')
+      .where('user.email = :email', { email })
+      .getOne();
   }
 
   insert(autoRegisterEmailDto: AuthRegisterEmailDto): Promise<User> {

@@ -11,7 +11,7 @@ interface MessageProps {
 const Message = (props: MessageProps) => {
   const { message } = props;
   const profile = useSelector((state: RootState) => state.profile).data;
-  const isFromMe = (message.createdBy.userId = profile.userId);
+  const isFromMe = message.createdBy.userId === profile.userId;
 
   return (
     <div className="chat-message" style={{ flexDirection: isFromMe ? "row-reverse" : "row" }}>

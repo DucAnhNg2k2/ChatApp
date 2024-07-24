@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UserReq } from 'src/const/const';
 import { JWT_EXPIRED, JWT_SECRET } from 'src/const/jwt.const';
 import { User } from 'src/database/entity/user.entity';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class JwtCoreService {
@@ -20,7 +21,7 @@ export class JwtCoreService {
   }
 
   signAccessToken(user: User) {
-    const payload: UserReq = { id: user.id };
+    const payload = { id: user.id, jti: randomUUID() };
     const token = this.jwtService.sign(JSON.stringify(payload), {
       secret: this.JWT_SECRET,
     });
@@ -32,7 +33,7 @@ export class JwtCoreService {
   }
 
   signRefreshToken(user: User) {
-    const payload: UserReq = { id: user.id };
+    const payload = { id: user.id, jti: randomUUID() };
     const token = this.jwtService.sign(JSON.stringify(payload), {
       secret: this.JWT_SECRET,
     });
