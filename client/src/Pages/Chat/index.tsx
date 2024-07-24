@@ -66,6 +66,9 @@ const Conversation = () => {
   const handleReceiveMessage = (data: MessageChat) => {
     setMessage(pre => [data, ...pre]);
   };
+  const handleReceiveNewConversation = (data: ConversationType) => {
+    // setConversationList(pre => [...pre, { _id: data._id, name: data.name, messages: [] }]);
+  };
   const handleInitSocket = async () => {
     try {
       const newSocket = io(`${HOST_SERVER}:${PORT_SERVER_SOCKET}`, {
@@ -75,6 +78,7 @@ const Conversation = () => {
         },
       });
       newSocket.on(SUBSCRIBE_MESSAGE.RECEIVE_MESSAGE, handleReceiveMessage);
+      newSocket.on(SUBSCRIBE_MESSAGE.RECEIVE_NEW_CONVERSATION, handleReceiveNewConversation);
       setSocket(newSocket);
       return () => {
         newSocket.disconnect();
@@ -274,6 +278,7 @@ const Conversation = () => {
           {!nameSearch.length &&
             conversationList.map((item: ConversationListType, index: number) => {
               const { _id, name, messages } = item;
+              // const isFromMe = messages
               // const { avatar, displayName, type, text, userId } = messageDTO;
               return (
                 <div className="chat-list-detail" key={_id} onClick={() => handleClickConversation(item)}>

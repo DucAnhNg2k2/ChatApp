@@ -33,7 +33,7 @@ export class ConversationService {
             from: 'messages',
             localField: 'lastMessage',
             foreignField: '_id',
-            as: 'messages',
+            as: 'lastMessage',
           },
         },
       ])
@@ -47,6 +47,7 @@ export class ConversationService {
       return {
         ...conversation,
         name: member.name,
+        lastMessage: conversation.lastMessage[0],
       };
     });
   }
@@ -83,6 +84,7 @@ export class ConversationService {
       );
       const mock = {
         name: member.name,
+        isMock: true,
       };
       return mock;
     }

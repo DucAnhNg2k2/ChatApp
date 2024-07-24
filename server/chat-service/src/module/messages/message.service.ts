@@ -35,7 +35,13 @@ export class MessageService {
       typeMessage: data.typeMessage,
       senders: [],
     });
-    return message.save();
+    // Update Last message in conversation
+    conversation.lastMessage = message;
+    const [messageData] = await Promise.all([
+      message.save(),
+      conversation.save(),
+    ]);
+    return messageData;
   }
 
   async getListMessage(user: UserReq, query: MessageGetDto) {
