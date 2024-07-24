@@ -16,9 +16,38 @@ export class ConversationService {
     private memberService: MemberService,
   ) {}
 
-  async getListConversation() {
-    const conversations = await this.conversationModel.find().exec();
-    return conversations;
+  async getListConversation(user: UserReq) {
+    const conversations = await this.conversationModel
+      .aggregate([
+        {
+          $lookup: {
+            from: 'members',
+            localField: 'members',
+            foreignField: '_id',
+            as: 'members',
+          },
+        },
+        {
+          $lookup: {
+            from: 'messages',
+            localField: 'lastMessage',
+            foreignField: '_id',
+            as: 'messages',
+          },
+        },
+      ])
+      .exec();
+
+    // Map conversation to get name
+    return conversations.map((conversation) => {
+      const member = (conversation.members as Members[]).find(
+        (member: Members) => member.userId !== user.id,
+      );
+      return {
+        ...conversation,
+        name: member.name,
+      };
+    });
   }
 
   async getConversation(user: UserReq, query: ConversationGetDto) {

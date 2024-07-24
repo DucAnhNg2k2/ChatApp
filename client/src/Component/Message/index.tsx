@@ -1,10 +1,6 @@
-import { useSelector } from "react-redux";
-import { HOST_SERVER, PORT_SERVER } from "../../config/config";
-import { RootState } from "../../Store";
-import { MessageDTO } from "../../type/MessageDTO";
-import { AvatarDefault } from "../../utils/AvatarUtil";
-import "./style.scss";
 import { MembersChat } from "../../type/member-type";
+import { MessageDTO } from "../../type/MessageDTO";
+import "./style.scss";
 
 const Message = ({ item, members }: { item: MessageDTO; members: MembersChat[] | undefined }) => {
   // const profile = useSelector((state: RootState) => state.profile);

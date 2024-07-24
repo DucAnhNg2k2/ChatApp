@@ -10,8 +10,8 @@ export class ConversationController {
   constructor(private ConversationService: ConversationService) {}
 
   @Get('page')
-  getConversations() {
-    return this.ConversationService.getListConversation();
+  getConversations(@User() user: UserReq) {
+    return this.ConversationService.getListConversation(user);
   }
 
   @Get('get')

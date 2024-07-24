@@ -12,7 +12,6 @@ export class MessageService {
   ) {}
 
   async createMessage(data: MessageCreateDto, userId: number) {
-    const;
     // const message = new this.messageModel(data);
     // return message.save();
   }

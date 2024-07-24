@@ -5,15 +5,15 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import ReactLoading from "react-loading";
 import { useSelector } from "react-redux";
 import "react-toastify/dist/ReactToastify.css";
-import { requestConversationDetail, requestGetMessage } from "../../api";
 import { requestGetMembers } from "../../api/auth";
-import { requestConversationCreate, requestConversationGet } from "../../api/chat";
+import { requestConversationGet } from "../../api/chat";
 import { requestUploadBase64 } from "../../api/upload";
 import Input from "../../Component/Input";
 import Loading from "../../Component/Loading";
 import Message from "../../Component/Message";
 import Modal from "../../Component/Modal";
 import UpdateProfile from "../../Component/UpdateProfile";
+import { colors } from "../../const/colors";
 import { isResponseSuccess } from "../../helper/reponse.success";
 import { RootState } from "../../Store";
 import { ConversationType } from "../../type/conversation-type";
@@ -23,7 +23,6 @@ import { MessageDTO } from "../../type/MessageDTO";
 import { ResponseType } from "../../type/response.type";
 import { AvatarDefault } from "../../utils/AvatarUtil";
 import "./chat.scss";
-import { colors } from "../../const/colors";
 
 const SIZE = 15;
 const Conversation = () => {
