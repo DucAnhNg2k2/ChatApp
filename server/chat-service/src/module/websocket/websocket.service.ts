@@ -16,6 +16,8 @@ import { SUBSCRIBE_MESSAGE } from 'src/const/socket';
 import { toPromise } from 'src/helper';
 import { MessageCreateDto } from '../messages/dto/message-create.dto';
 import { MessageService } from '../messages/message.service';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 
 interface UserSocket {
   [key: string]: Socket[];
@@ -78,11 +80,22 @@ export class WebsocketService
   }
 
   @SubscribeMessage(SUBSCRIBE_MESSAGE.CREATE_MESSAGE)
-  handleEvent(
+  async handleEvent(
     @MessageBody() body: MessageCreateDto,
     @ConnectedSocket() client: Socket,
   ) {
-    const data = this.messageService.createMessage(body);
+    // Validate body dto
+    // const dto = plainToInstance(MessageCreateDto, body);
+    // const errors = await validate(dto);
+
+    // if (errors.length) {
+    //   return 'Error';
+    // }
+
+    const data = this.messageService.createMessage(
+      body,
+      this.clients[client.id],
+    );
     return this.server.send(SUBSCRIBE_MESSAGE.RECEIVE_MESSAGE, data);
   }
 }
