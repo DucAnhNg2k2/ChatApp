@@ -26,7 +26,10 @@ interface SocketClient {
   [key: string]: number; // userId
 }
 
-@WebSocketGateway(80, { transports: ['websocket'] })
+@WebSocketGateway(8080, {
+  transports: ['websocket'],
+  cors: true,
+})
 export class WebsocketService
   implements OnGatewayConnection, OnGatewayDisconnect
 {
@@ -39,9 +42,7 @@ export class WebsocketService
   constructor(
     @Inject(AuthService.AUTH_SERVICE) private authServiceClient: ClientProxy,
     private messageService: MessageService,
-  ) {
-    console.log('[WebsocketService]:', 'Init');
-  }
+  ) {}
 
   async handleConnection(client: Socket) {
     try {
@@ -58,6 +59,7 @@ export class WebsocketService
       }
       this.userSocket[user.id].push(client);
       this.clients[client.id] = user.id;
+      console.log('[WebsocketService]:', 'Connected', user.id);
     } catch (error) {
       console.log(error);
       client.disconnect();
@@ -84,18 +86,10 @@ export class WebsocketService
     @MessageBody() body: MessageCreateDto,
     @ConnectedSocket() client: Socket,
   ) {
-    // Validate body dto
-    // const dto = plainToInstance(MessageCreateDto, body);
-    // const errors = await validate(dto);
-
-    // if (errors.length) {
-    //   return 'Error';
-    // }
-
-    const data = this.messageService.createMessage(
+    const data = await this.messageService.createMessage(
       this.clients[client.id],
       body,
     );
-    return this.server.send(SUBSCRIBE_MESSAGE.RECEIVE_MESSAGE, data);
+    return this.server.emit(SUBSCRIBE_MESSAGE.RECEIVE_MESSAGE, data);
   }
 }

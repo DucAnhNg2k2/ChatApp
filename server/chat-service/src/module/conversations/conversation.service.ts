@@ -171,6 +171,6 @@ export class ConversationService {
     if (!conversation) {
       throw new Error('User not in conversation');
     }
-    return conversation;
+    return { conversation, member };
   }
 }

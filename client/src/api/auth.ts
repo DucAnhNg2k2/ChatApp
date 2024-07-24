@@ -1,7 +1,7 @@
 import instanceAxios, { endPointAuth } from ".";
 import { ProfileType } from "../type/profile-type";
 import { ResponseType } from "../type/response.type";
-import { UserType } from "../type/user-type.enum";
+import { UserType } from "../enum/user-type.enum";
 
 const endPoint = {
   userProfile: "/user-profile",

@@ -1,13 +1,21 @@
+import { Socket } from "socket.io-client";
 import instanceAxios, { endPointConversation } from ".";
 import { MembersChat } from "../type/member-type";
 import { ResponseType } from "../type/response.type";
+import { MessageCreateDto } from "../Pages/Chat/dto/message-create.dto";
+import { SUBSCRIBE_MESSAGE } from "../config/config";
+import { MessageChat } from "../type/message-type";
 
 const endPoint = {
+  // Conversation
   getByMember: "conversations/get-by-member",
   getById: "conversations/get-by-id",
   page: "conversations/page",
+  // Message
+  messagePage: "messages/page",
 };
 
+// Conversation
 interface ResponseConversationGet {
   _id: string;
   members: MembersChat[];
@@ -55,4 +63,24 @@ const requestConversationCreate = (token: string, uid: number) => {
     }
   );
 };
+
+// Message
+const requestMessageCreate = (socket: Socket | null, messageCreateDto: MessageCreateDto) => {
+  if (!socket) {
+    return false;
+  }
+  socket.emit(SUBSCRIBE_MESSAGE.CREATE_MESSAGE, messageCreateDto);
+  return true;
+};
+const requestMessageGet = (token: string, conversationId: string): Promise<ResponseType<MessageChat[]>> => {
+  return instanceAxios
+    .get(endPoint.messagePage + `?conversationId=${conversationId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    .then(res => res.data);
+};
+
 export { requestConversationCreate, requestConversationGetById, requestConversationGetByMember, requestConversationPage };
+export { requestMessageCreate, requestMessageGet };

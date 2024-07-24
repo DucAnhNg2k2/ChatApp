@@ -1,4 +1,4 @@
-import { UserType } from "../../../type/user-type.enum";
+import { UserType } from "../../../enum/user-type.enum";
 
 export interface LoginDto {
   email: string;

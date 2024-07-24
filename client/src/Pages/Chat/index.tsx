@@ -1,28 +1,28 @@
-import { HttpStatusCode } from "axios";
 import lodash from "lodash";
 import React, { useEffect, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import ReactLoading from "react-loading";
 import { useSelector } from "react-redux";
 import "react-toastify/dist/ReactToastify.css";
+import { io, Socket } from "socket.io-client";
 import { requestGetMembers } from "../../api/auth";
-import { requestConversationGetById, requestConversationGetByMember, requestConversationPage } from "../../api/chat";
-import { requestUploadBase64 } from "../../api/upload";
+import { requestConversationGetById, requestConversationGetByMember, requestConversationPage, requestMessageCreate, requestMessageGet } from "../../api/chat";
 import Input from "../../Component/Input";
 import Loading from "../../Component/Loading";
 import Message from "../../Component/Message";
 import Modal from "../../Component/Modal";
 import UpdateProfile from "../../Component/UpdateProfile";
+import { HOST_SERVER, PORT_SERVER_SOCKET, SUBSCRIBE_MESSAGE } from "../../config/config";
 import { colors } from "../../const/colors";
+import { typeMessage } from "../../enum/message-type.enum";
 import { isResponseSuccess } from "../../helper/reponse.success";
 import { RootState } from "../../Store";
+import { ConversationListType } from "../../type/conversation-list-type";
 import { ConversationType } from "../../type/conversation-type";
 import { MembersChat } from "../../type/member-type";
-import { MessageDTO } from "../../type/MessageDTO";
-import { ResponseType } from "../../type/response.type";
-import { AvatarDefault } from "../../utils/AvatarUtil";
+import { MessageChat } from "../../type/message-type";
 import "./chat.scss";
-import { ConversationListType } from "../../type/conversation-list-type";
+import { MessageCreateDto } from "./dto/message-create.dto";
 
 const SIZE = 15;
 const Conversation = () => {
@@ -30,10 +30,8 @@ const Conversation = () => {
   const profile = useSelector((state: RootState) => state.profile).data;
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
 
-  // Message[] of Detail-Conversation
-  const [messageDTO, setMessageDTO] = React.useState<MessageDTO[]>([]);
-  // Input Text
-  const [text, setText] = React.useState<string>("");
+  const [message, setMessage] = useState<MessageChat[]>([]);
+  const [text, setText] = useState<string>("");
 
   const [conversation, setConversation] = useState<ConversationType>();
   const [conversationList, setConversationList] = useState<ConversationListType[]>([]);
@@ -42,8 +40,7 @@ const Conversation = () => {
   const [nameSearch, setNameSearch] = useState("");
   const [members, setMembers] = useState<MembersChat[]>([]);
 
-  // Socket - Page - HasMore
-  const [socket, setSocket] = React.useState<WebSocket>();
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [page, setPage] = React.useState<number>(0);
   const [hasMore, setHasMore] = React.useState<boolean>(true);
   const [isVisiblePopUpProfile, setIsVisiblePopUpProfile] = useState<boolean>(false);
@@ -51,7 +48,7 @@ const Conversation = () => {
   const refFile = React.useRef<HTMLInputElement>(null);
   const refConversation = React.useRef<HTMLDivElement>(null);
 
-  const loadData = async () => {
+  const loadDataConversation = async () => {
     try {
       const resListConversations = await requestConversationPage(token);
       if (isResponseSuccess(resListConversations) && resListConversations.data) {
@@ -63,25 +60,32 @@ const Conversation = () => {
     }
   };
   useEffect(() => {
-    loadData();
+    loadDataConversation();
   }, []);
 
-  // // Connect socket
-  // React.useEffect(() => {
-  //   try {
-  //     const socket = new WebSocket(`ws://${HOST_SERVER}:${PORT_SERVER}/socket?token=${token}`);
-  //     socket.onopen = () => {
-  //       toast.success("Connect to socket success !", toastObject);
-  //     };
-  //     socket.onmessage = handleOnMessage;
-  //     socket.onclose = () => {
-  //       toast.error("Close socket !!", toastObject);
-  //     };
-  //     setSocket(socket);
-  //   } catch (err) {
-  //     console.log(err);
-  //   }
-  // }, []);
+  const handleReceiveMessage = (data: MessageChat) => {
+    setMessage(pre => [data, ...pre]);
+  };
+  const handleInitSocket = async () => {
+    try {
+      const newSocket = io(`${HOST_SERVER}:${PORT_SERVER_SOCKET}`, {
+        transports: ["websocket"],
+        query: {
+          token,
+        },
+      });
+      newSocket.on(SUBSCRIBE_MESSAGE.RECEIVE_MESSAGE, handleReceiveMessage);
+      setSocket(newSocket);
+      return () => {
+        newSocket.disconnect();
+      };
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  useEffect(() => {
+    handleInitSocket();
+  }, []);
 
   // React.useEffect(() => {
   //   if (isVisible) {
@@ -89,68 +93,12 @@ const Conversation = () => {
   //   }
   // }, []);
 
-  // Logic
-  // Receive Text on socket
-  const handleOnMessage = React.useCallback(
-    async (event: MessageEvent<any>) => {
-      // const mess: MessageDTO = JSON.parse(event.data);
-      // const { id, conversationId, text, type, createTime, userId } = mess;
-      // if (!conversationId || !userId) {
-      //   return;
-      // }
-      // const index = ConversationFindIndexById(conversationId, conversationGetAllDTO);
-      // if (index == -1) {
-      //   // Insert to 0
-      //   const stateMess = { ...mess };
-      //   const resC: ResponseType = (await requestConversationDetail(conversationId, token)).data;
-      //   if (resC.statusCode === HttpStatusCode.Ok) {
-      //     const resCData: ConversationDetailDTO = resC.data;
-      //     const user = resCData.users.find(item => item.id !== profile.id);
-      //     if (user) {
-      //       const { avatar, displayName } = user;
-      //       stateMess.avatar = avatar;
-      //       stateMess.displayName = displayName;
-      //     }
-      //   }
-      //   const stateConversation: ConversationGetAllDTO = {
-      //     id: conversationId,
-      //     messageDTO: stateMess,
-      //   };
-      //   setConversationGetAllDTO(pre => [stateConversation, ...pre]);
-      // } else {
-      //   // Swap ( 0 - index )
-      //   const newState = [...conversationGetAllDTO];
-      //   const tmpState = conversationGetAllDTO[index];
-      //   newState[index] = newState[0];
-      //   newState[0] = tmpState;
-      //   // Update new Message
-      //   newState[0].messageDTO.type = type;
-      //   newState[0].messageDTO.text = text;
-      //   newState[0].messageDTO.createTime = createTime;
-      //   newState[0].messageDTO.id = id;
-      //   newState[0].messageDTO.userId = userId;
-      //   setConversationGetAllDTO(newState);
-      // }
-      // if (conversationDetailDTO && conversationDetailDTO.id == conversationId) {
-      //   const newMess = [{ ...mess }, ...messageDTO];
-      //   setMessageDTO(newMess);
-      // }
-    },
-    // [conversation, messageDTO, conversationGetAllDTO]
-    []
-  );
-
-  // Send Text on socket
-  const handleSendMessage = async (type: "text" | "image", message: string) => {
+  const handleSendMessage = async (data: Omit<MessageCreateDto, "conversationId">) => {
     try {
-      if ((type === "image" || (type === "text" && text.length > 0)) && conversation?._id) {
-        const mess: object = {
-          type,
-          message,
-          to: conversation._id,
-        };
-        if (socket) {
-          socket.send(JSON.stringify(mess));
+      if (conversation) {
+        const conversationId = conversation?._id;
+        const status = requestMessageCreate(socket, { ...data, conversationId });
+        if (status) {
           setText("");
         }
       }
@@ -158,13 +106,6 @@ const Conversation = () => {
       console.log(err);
     }
   };
-
-  // Update socket on socket
-  React.useEffect(() => {
-    if (socket) {
-      socket.onmessage = handleOnMessage;
-    }
-  }, [socket, handleOnMessage]);
 
   React.useEffect(() => {
     // Responsive mobile set style.left = 0
@@ -197,6 +138,17 @@ const Conversation = () => {
     name.length === 0 ? setMembers([]) : handleChangeSearchLodash(name);
   };
 
+  const handleGetMessages = async (conversation: ConversationType) => {
+    try {
+      const resMessage = await requestMessageGet(token, conversation._id);
+      if (isResponseSuccess(resMessage) && resMessage.data) {
+        const data: MessageChat[] = resMessage.data;
+        setMessage(data);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
   const handleClickMember = async (member: MembersChat) => {
     setIsLoading(true);
     try {
@@ -204,6 +156,7 @@ const Conversation = () => {
       if (isResponseSuccess(res) && res.data) {
         const data: ConversationType = res.data;
         setConversation(data);
+        await handleGetMessages(data);
       }
       setNameSearch("");
     } catch (err) {}
@@ -217,6 +170,7 @@ const Conversation = () => {
       if (isResponseSuccess(res) && res.data) {
         const data: ConversationType = res.data;
         setConversation(data);
+        await handleGetMessages(data);
       }
     } catch (err) {
       console.log(err);
@@ -254,23 +208,23 @@ const Conversation = () => {
 
   const handleFile = (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
-      // 2 API
-      // Upload File
-      // Send File
-      if (event.target.files) {
-        const file = event.target.files[0];
-        // Hash with base64
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-          const resultBase64String = reader.result as string;
-          const res: ResponseType = (await requestUploadBase64(token, resultBase64String)).data;
-          if (res.statusCode === HttpStatusCode.Ok) {
-            const url = res.data;
-            handleSendMessage("image", url);
-          }
-        };
-        reader.readAsDataURL(file);
-      }
+      // // 2 API
+      // // Upload File
+      // // Send File
+      // if (event.target.files) {
+      //   const file = event.target.files[0];
+      //   // Hash with base64
+      //   const reader = new FileReader();
+      //   reader.onloadend = async () => {
+      //     const resultBase64String = reader.result as string;
+      //     const res: ResponseType = (await requestUploadBase64(token, resultBase64String)).data;
+      //     if (res.statusCode === HttpStatusCode.Ok) {
+      //       const url = res.data;
+      //       handleSendMessage("image", url);
+      //     }
+      //   };
+      //   reader.readAsDataURL(file);
+      // }
     } catch (err) {
       console.log(err);
     }
@@ -353,7 +307,7 @@ const Conversation = () => {
                 <div id="scrollableDiv" className="chat-detail-message">
                   <InfiniteScroll
                     scrollableTarget="scrollableDiv"
-                    dataLength={messageDTO.length}
+                    dataLength={message.length}
                     next={handleNextDataMessage}
                     style={{ display: "flex", flexDirection: "column-reverse" }} //To put endMessage and loader to the top.
                     inverse={true}
@@ -363,8 +317,8 @@ const Conversation = () => {
                         <ReactLoading type={"spin"} color={colors.black} width={30} height={30} />
                       </div>
                     }>
-                    {messageDTO.map((item: MessageDTO, index: number) => (
-                      <Message members={conversation.members} item={item} key={item.id} />
+                    {message.map((item: MessageChat, index: number) => (
+                      <Message message={item} key={item._id} />
                     ))}
                   </InfiniteScroll>
                 </div>
@@ -375,8 +329,26 @@ const Conversation = () => {
               <button className="chat-detail-select-img" onClick={handleClickButtonFile}>
                 <i className="fa-solid fa-image"></i>
               </button>
-              <Input text={text} setText={setText} type="text" placeholder="Gửi tin nhắn" callBackFocus={() => handleSendMessage("text", text)} />
-              <button className="chat-detail-send" onClick={() => handleSendMessage("text", text)}>
+              <Input
+                text={text}
+                setText={setText}
+                type="text"
+                placeholder="Gửi tin nhắn"
+                callBackFocus={() =>
+                  handleSendMessage({
+                    content: text,
+                    typeMessage: typeMessage.TEXT,
+                  })
+                }
+              />
+              <button
+                className="chat-detail-send"
+                onClick={() =>
+                  handleSendMessage({
+                    content: text,
+                    typeMessage: typeMessage.TEXT,
+                  })
+                }>
                 <i className="fa-solid fa-paper-plane"></i>
               </button>
             </div>

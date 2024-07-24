@@ -7,7 +7,6 @@ const instanceAxios = axios.create({
     "Content-Type": "application/json",
   },
 });
-console.log(`http://${HOST_SERVER}:${PORT_SERVER}`, "ok");
 
 export const endPointConversation = "/conversation";
 export const endPointMessage = "/message";
@@ -34,13 +33,13 @@ const requestConversationGetAll = (token: string) => {
     },
   });
 };
-const requestGetMessage = (cid: number, token: string, page: number, size: number) => {
-  return instanceAxios.get(endPointMessage + `/get/${cid}?page=${page}&size=${size}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
+// const requestGetMessage = (cid: number, token: string, page: number, size: number) => {
+//   return instanceAxios.get(endPointMessage + `/get/${cid}?page=${page}&size=${size}`, {
+//     headers: {
+//       Authorization: `Bearer ${token}`,
+//     },
+//   });
+// };
 
 export default instanceAxios;
-export { requestConversationDetail, requestConversationGetAll, requestGetMessage, verifyToken };
+export { requestConversationDetail, requestConversationGetAll, verifyToken };

@@ -1,25 +1,31 @@
-import { MembersChat } from "../../type/member-type";
-import { MessageDTO } from "../../type/MessageDTO";
+import { useSelector } from "react-redux";
+import { RootState } from "../../Store";
+import { MessageChat } from "../../type/message-type";
 import "./style.scss";
+import { HOST_SERVER, PORT_SERVER } from "../../config/config";
+import { typeMessage } from "../../enum/message-type.enum";
 
-const Message = ({ item, members }: { item: MessageDTO; members: MembersChat[] | undefined }) => {
-  // const profile = useSelector((state: RootState) => state.profile);
-  // const user = users?.find(user => user._id === item.userId);
-  // const isFromMe = profile.data.id === user?.id;
+interface MessageProps {
+  message: MessageChat;
+}
+const Message = (props: MessageProps) => {
+  const { message } = props;
+  const profile = useSelector((state: RootState) => state.profile).data;
+  const isFromMe = (message.createdBy.userId = profile.userId);
 
   return (
-    <div></div>
-    // <div className="chat-message" style={{ flexDirection: isFromMe ? "row-reverse" : "row" }}>
-    /* <img src={AvatarDefault(user?.avatar)} className="chat-message-img" title={user?.displayName} />
-      {item.type === "text" ? (
-        <p className="chat-message-text" title={`${item.createTime}`}>
-          {item.text}
+    <div className="chat-message" style={{ flexDirection: isFromMe ? "row-reverse" : "row" }}>
+      {/* <img src={AvatarDefault(user?.avatar)} className="chat-message-img" title={user?.displayName} /> */}
+      {message.type == typeMessage.TEXT ? (
+        <p className="chat-message-text" title={`${message.createdAt}`}>
+          {message.content}
         </p>
       ) : (
-        <img src={`http://${HOST_SERVER}:${PORT_SERVER}/api/uploads/get/${item.text}`} className="chat-message-image" title={`${item.createTime}`} />
-      )} */
-    // </div>
+        <div></div>
+      )}
+    </div>
   );
 };
+// <img src={`http://${HOST_SERVER}:${PORT_SERVER}/api/uploads/get/${item.text}`} className="chat-message-image" title={`${item.createTime}`} />)
 
 export default Message;

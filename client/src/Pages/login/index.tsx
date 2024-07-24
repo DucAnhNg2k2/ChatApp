@@ -15,7 +15,7 @@ import { isResponseSuccess } from "../../helper/reponse.success";
 import { RouterName } from "../../router";
 import { setValueToken } from "../../Store/token";
 import { ResponseType } from "../../type/response.type";
-import { UserType } from "../../type/user-type.enum";
+import { UserType } from "../../enum/user-type.enum";
 import "./login.scss";
 import { setProfile } from "../../Store/Profile";
 
