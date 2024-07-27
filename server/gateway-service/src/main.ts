@@ -4,7 +4,7 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 import { ConfigService } from '@nestjs/config';
 import { AppService } from './app.service';
 import { Response, Request, NextFunction } from 'express';
-import { AuthService, ChatService, Server } from './const/const';
+import { AuthService, ChatService, FileService, Server } from './const/const';
 
 const whiteListEndPoint = [
   '/auth/register',
@@ -14,6 +14,7 @@ const whiteListEndPoint = [
 ];
 const proxyToAuthService = ['auth', 'user-profile'];
 const proxyToChatService = ['conversations', 'messages', 'members'];
+const proxyToFileService = ['files'];
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -30,6 +31,10 @@ async function bootstrap() {
 
   const chatServiceHost = configService.get(ChatService.CHAT_SERVICE_HOST);
   const chatServicePort = configService.get(ChatService.CHAT_SERVICE_PORT);
+
+  const fileServiceHost = configService.get(FileService.FILE_SERVICE_HOST);
+  const fileServicePort = configService.get(FileService.FILE_SERVICE_PORT);
+
   const appService = app.get<AppService>(AppService);
 
   // Middleware to verify token
@@ -76,12 +81,27 @@ async function bootstrap() {
       }),
     );
   });
+
   // Proxy to chat-service
   proxyToChatService.forEach((path) => {
     app.use(
       `/${path}`,
       createProxyMiddleware({
         target: `http://${chatServiceHost}:${chatServicePort}/${path}`,
+        changeOrigin: true,
+        on: {
+          proxyReq: (proxyReq, req, res) => {},
+        },
+      }),
+    );
+  });
+
+  // Proxy to file-service
+  proxyToFileService.forEach((path) => {
+    app.use(
+      `/${path}`,
+      createProxyMiddleware({
+        target: `http://${fileServiceHost}:${fileServicePort}/${path}`,
         changeOrigin: true,
         on: {
           proxyReq: (proxyReq, req, res) => {},
