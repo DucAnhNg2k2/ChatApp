@@ -29,6 +29,7 @@ import { getMemberMeInConversation, getMemberOtherInConversation, isCreatedMessa
 import { profileValidate } from "../../utils/profile-validate.utils";
 import "./chat.scss";
 import { MessageCreateDto } from "./dto/message-create.dto";
+import { requestUploadFile } from "../../api/file";
 
 const SIZE = 15;
 const Conversation = () => {
@@ -70,8 +71,20 @@ const Conversation = () => {
     loadDataConversation();
   }, []);
 
+  const handleUpdateConversationWhenReceiveMessage = (data: MessageChat) => {
+    // Push conversation to top
+    const { conversationId } = data;
+    const conversation = conversationList.find(item => item._id === conversationId);
+    if (!conversation) {
+      return;
+    }
+    conversation.lastMessage = data;
+    const newConversation = [conversation, ...conversationList.filter(item => item._id !== conversationId)];
+    setConversationList(newConversation);
+  };
   const handleReceiveMessage = (data: MessageChat) => {
     setMessage(pre => [data, ...pre]);
+    handleUpdateConversationWhenReceiveMessage(data);
   };
   const handleReceiveNewConversation = (data: ConversationType) => {
     // setConversationList(pre => [...pre, { _id: data._id, name: data.name, messages: [] }]);
@@ -84,8 +97,6 @@ const Conversation = () => {
           token,
         },
       });
-      newSocket.on(SUBSCRIBE_MESSAGE.RECEIVE_MESSAGE, handleReceiveMessage);
-      newSocket.on(SUBSCRIBE_MESSAGE.RECEIVE_NEW_CONVERSATION, handleReceiveNewConversation);
       setSocket(newSocket);
       return () => {
         newSocket.disconnect();
@@ -97,6 +108,12 @@ const Conversation = () => {
   useEffect(() => {
     handleInitSocket();
   }, []);
+  useEffect(() => {
+    if (socket) {
+      socket.on(SUBSCRIBE_MESSAGE.RECEIVE_MESSAGE, handleReceiveMessage);
+      socket.on(SUBSCRIBE_MESSAGE.RECEIVE_NEW_CONVERSATION, handleReceiveNewConversation);
+    }
+  }, [conversationList, conversation]);
 
   const handleOnLoadProfile = async () => {
     setIsLoading(true);
@@ -115,6 +132,24 @@ const Conversation = () => {
     setIsVisiblePopUpProfile(!profileValidate(profile));
   }, [profile]);
 
+  const handleFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      const file = event.target.files;
+      if (!file) {
+        return;
+      }
+      const responseFile = await requestUploadFile(token, file[0]);
+      if (isResponseSuccess(responseFile) && responseFile.data) {
+        handleSendMessage({
+          content: responseFile.data.url,
+          typeMessage: typeMessage.IMAGE,
+        });
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   const handleSendMessage = async (data: Omit<MessageCreateDto, "conversationId">) => {
     try {
       if (!conversation) {
@@ -122,7 +157,6 @@ const Conversation = () => {
         return;
       }
       let conversationTmp: ConversationType = conversation;
-
       // create-conversation
       if (conversation.isMock) {
         const memberOther = getMemberOtherInConversation(conversation.members, profile.userId);
@@ -249,37 +283,11 @@ const Conversation = () => {
     }
   };
 
-  const handleFile = (event: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      // // 2 API
-      // // Upload File
-      // // Send File
-      // if (event.target.files) {
-      //   const file = event.target.files[0];
-      //   // Hash with base64
-      //   const reader = new FileReader();
-      //   reader.onloadend = async () => {
-      //     const resultBase64String = reader.result as string;
-      //     const res: ResponseType = (await requestUploadBase64(token, resultBase64String)).data;
-      //     if (res.statusCode === HttpStatusCode.Ok) {
-      //       const url = res.data;
-      //       handleSendMessage("image", url);
-      //     }
-      //   };
-      //   reader.readAsDataURL(file);
-      // }
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
   const handleClickArrowLeft = () => {
     if (refConversation && refConversation.current) {
       refConversation.current.style.left = "100%";
     }
   };
-
-  console.log(conversation, "yes");
 
   return (
     <Modal>
@@ -322,7 +330,17 @@ const Conversation = () => {
               const { _id, name, avatar, lastMessage, members } = item;
               const getMemberMe = getMemberMeInConversation(members, profile.userId);
               const isCreateMessage = isCreatedMessage(lastMessage, getMemberMe);
-              const contentMessage = isCreateMessage ? `Bạn: ${lastMessage.content}` : lastMessage.content;
+
+              const contentMessage = (function () {
+                switch (lastMessage.type) {
+                  case typeMessage.TEXT:
+                    return isCreateMessage ? `Bạn: ${lastMessage.content}` : lastMessage.content;
+                  case typeMessage.IMAGE:
+                    return isCreateMessage ? "Bạn: đã gửi một hình ảnh" : "Đã gửi một hình ảnh";
+                  default:
+                    return "";
+                }
+              })();
 
               return (
                 <div className="chat-list-detail" key={_id} onClick={() => handleClickConversation(item)}>

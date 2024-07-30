@@ -19,13 +19,18 @@ const getMemberMeInConversation = (members: MembersChat[], userId: number) => {
 
 const isCreatedMessage = (message: MessageChat, member: MembersChat | undefined) => {
   if (!member) return false;
-  return (message.createdBy as string) === member._id;
+  switch (typeof message.createdBy) {
+    case "string":
+      return message.createdBy === member._id;
+    case "object":
+      return (message.createdBy as MembersChat)._id === member._id;
+    default:
+      return false;
+  }
 };
 
 const getMemberCreateMessage = (message: MessageChat, members: MembersChat[]) => {
   return members.find(member => {
-    console.log(typeof message.createdBy, member._id, (message.createdBy as MembersChat)._id, "getMemberCreateMessage");
-
     switch (typeof message.createdBy) {
       case "string":
         return message.createdBy === member._id;

@@ -44,7 +44,7 @@ export class ConversationService {
         },
         {
           $sort: {
-            'lastMessage.createdAt': -1,
+            'lastMessage.updatedAt': -1,
           },
         },
       ])

@@ -27,11 +27,11 @@ const Message = (props: MessageProps) => {
           {message.content}
         </p>
       ) : (
-        <div></div>
+        <img src={`${message.content}`} className="chat-message-image" title={`${message.createdAt}`} />
       )}
     </div>
   );
 };
-// <img src={`http://${HOST_SERVER}:${PORT_SERVER}/api/uploads/get/${item.text}`} className="chat-message-image" title={`${item.createTime}`} />)
+//
 
 export default Message;
