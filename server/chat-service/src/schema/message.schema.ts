@@ -29,7 +29,7 @@ export class Messages {
   @Prop({ type: mongoose.Schema.Types.String })
   content: string;
 
-  @Prop({ type: String, enum: typeMessage, default: typeMessage.TEXT })
+  @Prop({ type: String, enum: typeMessage })
   type: typeMessage;
 
   @Prop()

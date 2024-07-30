@@ -20,7 +20,7 @@ const proxyToFileService = ['files'];
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: 'http://localhost:3001',
+    origin: ['http://localhost:3001', '*'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   });
   const configService = app.get<ConfigService>(ConfigService);

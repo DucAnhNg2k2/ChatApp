@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import * as mongoose from 'mongoose';
 import { Model } from 'mongoose';
 import { UserReq } from 'src/const/const';
 import { Conversations } from 'src/schema/conversation.schema';
 import { Members } from 'src/schema/member.schema';
 import { MemberService } from '../members/member.service';
 import { ConversationCreateByMemberDto } from './dto/conversation-create.dto';
-import { ConversationGetByMemberDto } from './dto/conversation-get-by-member.dto';
 import { ConversationGetByIdDto } from './dto/conversation-get-by-id.dto';
-import * as mongoose from 'mongoose';
+import { ConversationGetByMemberDto } from './dto/conversation-get-by-member.dto';
 @Injectable()
 export class ConversationService {
   constructor(
@@ -188,16 +188,44 @@ export class ConversationService {
   }
 
   async checkUserInConversation(user: UserReq, conversationId: string) {
-    const member = await this.memberService.findByUserIdOrFail(user.id);
-    const conversation = await this.conversationModel
-      .findOne({
-        _id: conversationId,
-        members: member._id,
-      })
+    const conversationQuery = await this.conversationModel
+      .aggregate([
+        {
+          $match: {
+            _id: new mongoose.Types.ObjectId(conversationId),
+          },
+        },
+        {
+          $lookup: {
+            from: 'members',
+            localField: 'members',
+            foreignField: '_id',
+            as: 'members',
+          },
+        },
+        {
+          $match: {
+            'members.userId': user.id,
+          },
+        },
+      ])
       .exec();
+    const conversation = conversationQuery?.[0];
     if (!conversation) {
       throw new Error('User not in conversation');
     }
-    return { conversation, member };
+
+    const memberMe = (conversation.members as Members[]).find(
+      (member: Members) => member.userId === user.id,
+    );
+    return { conversation, memberMe };
+  }
+
+  updateConversation(conversation: Conversations) {
+    return this.conversationModel.findByIdAndUpdate(
+      conversation['_id'],
+      conversation,
+      { new: true },
+    );
   }
 }

@@ -14,10 +14,10 @@ import { AuthService, UserReq } from 'src/const/const';
 import { MESSAGE_PATTERN } from 'src/const/pattern';
 import { SUBSCRIBE_MESSAGE } from 'src/const/socket';
 import { toPromise } from 'src/helper';
+import { Conversations } from 'src/schema/conversation.schema';
+import { Members } from 'src/schema/member.schema';
 import { MessageCreateDto } from '../messages/dto/message-create.dto';
 import { MessageService } from '../messages/message.service';
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
 
 interface UserSocket {
   [key: string]: Socket[];
@@ -36,8 +36,8 @@ export class WebsocketService
   @WebSocketServer()
   server: Server;
 
-  userSocket: UserSocket = {};
-  clients: SocketClient = {};
+  userSocket: UserSocket = {}; // [user.id] => [socket]
+  clients: SocketClient = {}; // [socket.id] => userId
 
   constructor(
     @Inject(AuthService.AUTH_SERVICE) private authServiceClient: ClientProxy,
@@ -86,10 +86,26 @@ export class WebsocketService
     @MessageBody() body: MessageCreateDto,
     @ConnectedSocket() client: Socket,
   ) {
-    const data = await this.messageService.createMessage(
+    const { message, conversation } = await this.messageService.createMessage(
       this.clients[client.id],
       body,
     );
-    return this.server.emit(SUBSCRIBE_MESSAGE.RECEIVE_MESSAGE, data);
+    this.getSocketClientInConversation(conversation);
+    return this.server
+      .to(conversation['id'])
+      .emit(SUBSCRIBE_MESSAGE.RECEIVE_MESSAGE, message);
+  }
+
+  private getSocketClientInConversation(conversation: Conversations) {
+    (conversation.members as Members[]).forEach((member) => {
+      if (this.userSocket[member.userId]) {
+        const sockets = this.userSocket[member.userId];
+        for (let i = 0; i < sockets.length; i++) {
+          if (!sockets[i].rooms.has(conversation['id'])) {
+            sockets[i].join(conversation['id']);
+          }
+        }
+      }
+    });
   }
 }
