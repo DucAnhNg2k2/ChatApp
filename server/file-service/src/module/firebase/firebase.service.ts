@@ -1,14 +1,16 @@
+import { Bucket } from '@google-cloud/storage';
 import { Injectable, OnModuleInit } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { initializeApp, cert } from 'firebase-admin/app';
-import { getStorage } from 'firebase-admin/storage';
+import { getStorage, Storage } from 'firebase-admin/storage';
 
 @Injectable()
 export class FirebaseService implements OnModuleInit {
   private serviceAccount = require('../../../firebase.json');
   private storageBucket = 'gs://chatapp-f0f95.appspot.com';
 
-  private storage;
-  private bucket;
+  private storage: Storage = null;
+  private bucket: Bucket = null;
   constructor() {}
 
   onModuleInit() {
@@ -22,12 +24,11 @@ export class FirebaseService implements OnModuleInit {
   }
 
   async uploadFile(file: Express.Multer.File) {
-    const fullPath = `images/${file.originalname}`;
+    const fullPath = `images/${randomUUID()}`;
     const bucketFile = this.bucket.file(fullPath);
 
     await bucketFile.save(file.buffer, {
       contentType: file.mimetype,
-      gzip: true,
     });
 
     const [url] = await bucketFile.getSignedUrl({
@@ -36,5 +37,11 @@ export class FirebaseService implements OnModuleInit {
     });
 
     return url;
+  }
+
+  async downloadFile(filename: string) {
+    const file = this.bucket.file(`images/${filename}`);
+    const stream = file.createReadStream();
+    return stream;
   }
 }

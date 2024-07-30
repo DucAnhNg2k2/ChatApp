@@ -9,7 +9,6 @@ const endPoint = {
   searchProfile: "/search-profile",
   register: "/register",
   login: "/login",
-  updateProfile: "/update",
   members: "/members",
 };
 
@@ -18,6 +17,7 @@ interface ResponseProfile {
   userId: number;
   name: string;
   address: string;
+  avatar: string;
 }
 const requestGetProfile = (token: string): Promise<ResponseType<ResponseProfile>> => {
   return instanceAxios
@@ -29,18 +29,20 @@ const requestGetProfile = (token: string): Promise<ResponseType<ResponseProfile>
     .then(res => res.data);
 };
 
-const requestUpdateProfile = (token: string, body: ProfileType) => {
-  return instanceAxios.put(
-    endPointAuth,
-    {
-      ...body,
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
+const requestUpdateProfile = (token: string, body: ProfileType): Promise<ResponseType> => {
+  return instanceAxios
+    .put(
+      endPoint.userProfile,
+      {
+        ...body,
       },
-    }
-  );
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    .then(res => res.data);
 };
 
 const requestProfileGetById = (token: string, uid: number) => {
@@ -55,6 +57,7 @@ interface ResponseMembers {
   _id: string;
   userId: number;
   name: string;
+  avatar: string;
 }
 const requestGetMembers = (token: string, name: string): Promise<ResponseType<ResponseMembers[]>> => {
   return instanceAxios

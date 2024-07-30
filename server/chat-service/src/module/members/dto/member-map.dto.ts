@@ -4,4 +4,5 @@ export class MapToMemberChat {
   userId: number;
   name: string;
   address: string;
+  avatar: string;
 }

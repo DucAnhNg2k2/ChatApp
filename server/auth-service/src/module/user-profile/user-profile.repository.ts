@@ -23,12 +23,14 @@ export class UserProfileRepository {
       return await this.usersRepository.update(userProfile.id, {
         name: updateMe.name,
         address: updateMe.address,
+        avatar: updateMe.avatar,
       });
     }
     return await this.usersRepository.insert({
       userId,
       name: updateMe.name,
       address: updateMe.address,
+      avatar: updateMe.avatar,
     });
   }
 

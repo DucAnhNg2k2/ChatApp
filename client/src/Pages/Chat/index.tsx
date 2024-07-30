@@ -2,30 +2,37 @@ import lodash from "lodash";
 import React, { useEffect, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import ReactLoading from "react-loading";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { io, Socket } from "socket.io-client";
-import { requestGetMembers } from "../../api/auth";
-import { requestConversationGetById, requestConversationGetByMember, requestConversationPage, requestMessageCreate, requestMessageGet } from "../../api/chat";
+import { requestGetMembers, requestGetProfile } from "../../api/auth";
+import { requestConversationCreate, requestConversationGetById, requestConversationGetByMember, requestConversationPage, requestMessageCreate, requestMessageGet } from "../../api/chat";
 import Input from "../../Component/Input";
 import Loading from "../../Component/Loading";
 import Message from "../../Component/message";
 import Modal from "../../Component/Modal";
-import UpdateProfile from "../../Component/UpdateProfile";
+import UpdateProfile from "../../Component/update-profile";
 import { HOST_SERVER, PORT_SERVER_SOCKET, SUBSCRIBE_MESSAGE } from "../../config/config";
+import { toastObject } from "../../config/toast";
 import { colors } from "../../const/colors";
 import { typeMessage } from "../../enum/message-type.enum";
 import { isResponseSuccess } from "../../helper/reponse.success";
-import { RootState } from "../../Store";
+import { AppDispatch, RootState } from "../../Store";
+import { setProfile } from "../../Store/Profile";
 import { ConversationListType } from "../../type/conversation-list-type";
 import { ConversationType } from "../../type/conversation-type";
 import { MembersChat } from "../../type/member-type";
 import { MessageChat } from "../../type/message-type";
+import { getAvatar } from "../../utils/avatar.utils";
+import { getMemberMeInConversation, getMemberOtherInConversation, isCreatedMessage } from "../../utils/conversation.utils";
+import { profileValidate } from "../../utils/profile-validate.utils";
 import "./chat.scss";
 import { MessageCreateDto } from "./dto/message-create.dto";
 
 const SIZE = 15;
 const Conversation = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const token = useSelector((state: RootState) => state.token).value;
   const profile = useSelector((state: RootState) => state.profile).data;
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
@@ -91,27 +98,56 @@ const Conversation = () => {
     handleInitSocket();
   }, []);
 
-  // React.useEffect(() => {
-  //   if (isVisible) {
-  //     toast.error("Cập nhật avatar và tên");
-  //   }
-  // }, []);
+  const handleOnLoadProfile = async () => {
+    setIsLoading(true);
+    const responseProfile = await requestGetProfile(token);
+    if (isResponseSuccess(responseProfile) && responseProfile.data) {
+      const profile = responseProfile.data;
+      dispatch(setProfile(profile));
+      setIsVisiblePopUpProfile(!profileValidate(profile));
+    }
+    setIsLoading(false);
+  };
+  useEffect(() => {
+    handleOnLoadProfile();
+  }, []);
+  useEffect(() => {
+    setIsVisiblePopUpProfile(!profileValidate(profile));
+  }, [profile]);
 
   const handleSendMessage = async (data: Omit<MessageCreateDto, "conversationId">) => {
     try {
-      if (conversation) {
-        const conversationId = conversation?._id;
-        const status = requestMessageCreate(socket, { ...data, conversationId });
-        if (status) {
-          setText("");
+      if (!conversation) {
+        toast.error("Chưa chọn cuộc trò chuyện", toastObject);
+        return;
+      }
+      let conversationTmp: ConversationType = conversation;
+
+      // create-conversation
+      if (conversation.isMock) {
+        const memberOther = getMemberOtherInConversation(conversation.members, profile.userId);
+        if (!memberOther) {
+          toast.error("Không tìm thấy người dùng khác trong cuộc trò chuyện", toastObject);
+          return;
         }
+        const resConversation = await requestConversationCreate(token, memberOther._id);
+        if (!isResponseSuccess(resConversation) || !resConversation.data) {
+          toast.error("Không tạo được cuộc trò chuyện", toastObject);
+          return;
+        }
+        conversationTmp = resConversation.data;
+      }
+      const conversationId = conversationTmp?._id;
+      const status = requestMessageCreate(socket, { ...data, conversationId });
+      if (status) {
+        setText("");
       }
     } catch (err) {
       console.log(err);
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Responsive mobile set style.left = 0
     if (refConversation && refConversation.current) {
       refConversation.current.style.left = "0%";
@@ -160,7 +196,9 @@ const Conversation = () => {
       if (isResponseSuccess(res) && res.data) {
         const data: ConversationType = res.data;
         setConversation(data);
-        await handleGetMessages(data);
+        if (data._id) {
+          await handleGetMessages(data);
+        }
       }
       setNameSearch("");
     } catch (err) {}
@@ -168,6 +206,7 @@ const Conversation = () => {
   };
 
   const handleClickConversation = async (item: ConversationListType) => {
+    if (conversation?._id === item._id) return;
     setIsLoading(true);
     try {
       const res = await requestConversationGetById(token, item._id);
@@ -240,17 +279,19 @@ const Conversation = () => {
     }
   };
 
+  console.log(conversation, "yes");
+
   return (
     <Modal>
       <div className="chat-container">
         <div className="chat-list">
           <div className="chat-profile">
-            {/* <img src="./" className="chat-profile-img" alt="" /> */}
+            <img src={`${getAvatar(profile.avatar)}`} className="chat-profile-img" alt="" />
             <div>
               <p className="chat-profile-name"> {profile.name} </p>
-              {/* <button className="chat-profile-edit" onClick={() => (true)}> */}
-              <i className="fa-solid fa-user-pen"></i>
-              {/* </button> */}
+              <button className="chat-profile-edit" onClick={() => setIsVisiblePopUpProfile(true)}>
+                <i className="fa-solid fa-user-pen"></i>
+              </button>
             </div>
           </div>
           <div className="chat-search">
@@ -259,6 +300,7 @@ const Conversation = () => {
             </button>
             <input placeholder="Search" className="chat-search-input" value={nameSearch} onChange={handleChangeSearch} />
           </div>
+
           {/* Find User */}
           {nameSearch.length > 0 &&
             (isLoadingSearch ? (
@@ -268,7 +310,7 @@ const Conversation = () => {
             ) : (
               members.map((user: MembersChat, index: number) => (
                 <div className="chat-list-detail" key={user._id} onClick={() => handleClickMember(user)}>
-                  {/* <img src={AvatarDefault(user.avatar)} className="chat-list-detail-image" alt="" /> */}
+                  <img src={getAvatar(user.avatar)} className="chat-list-detail-image" alt="" />
                   <div>
                     <p className="chat-list-detail-name">{user.name}</p>
                   </div>
@@ -277,20 +319,23 @@ const Conversation = () => {
             ))}
           {!nameSearch.length &&
             conversationList.map((item: ConversationListType, index: number) => {
-              const { _id, name, messages } = item;
-              // const isFromMe = messages
-              // const { avatar, displayName, type, text, userId } = messageDTO;
+              const { _id, name, avatar, lastMessage, members } = item;
+              const getMemberMe = getMemberMeInConversation(members, profile.userId);
+              const isCreateMessage = isCreatedMessage(lastMessage, getMemberMe);
+              const contentMessage = isCreateMessage ? `Bạn: ${lastMessage.content}` : lastMessage.content;
+
               return (
                 <div className="chat-list-detail" key={_id} onClick={() => handleClickConversation(item)}>
-                  {/* <img src={AvatarDefault(avatar)} className="chat-list-detail-image" alt="" /> */}
+                  <img src={getAvatar(avatar)} className="chat-list-detail-image" alt="" />
                   <div>
                     <p className="chat-list-detail-name">{name}</p>
-                    {/* <p className="chat-list-detail-message">{`${userId === profile.id ? `Bạn: ${text}` : `${text}`}`}</p> */}
+                    <p className="chat-list-detail-message">{contentMessage}</p>
                   </div>
                 </div>
               );
             })}
         </div>
+
         <div className="chat-divide" />
         {!conversation ? (
           <div className="chat-null">Hãy chọn một đoạn chat</div>
@@ -300,7 +345,7 @@ const Conversation = () => {
               <button className="chat-detail-arrow-left hidden" onClick={handleClickArrowLeft}>
                 <i className="fa-solid fa-arrow-left"></i>
               </button>
-              {/* <img src={ConversationFindUserOtherImage(conversationDetailDTO.users, profile.id)} className="chat-detail-image" alt="" /> */}
+              <img src={getAvatar(conversation.avatar)} className="chat-detail-image" alt="" />
               <p className="chat-detail-name">{conversation.name}</p>
             </div>
             <div className="chat-detail-content">
@@ -323,7 +368,7 @@ const Conversation = () => {
                       </div>
                     }>
                     {message.map((item: MessageChat, index: number) => (
-                      <Message message={item} key={item._id} />
+                      <Message message={item} key={item._id} conversation={conversation} />
                     ))}
                   </InfiniteScroll>
                 </div>

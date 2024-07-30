@@ -8,6 +8,7 @@ import { MessageChat } from "../type/message-type";
 
 const endPoint = {
   // Conversation
+  conversation: "conversations",
   getByMember: "conversations/get-by-member",
   getById: "conversations/get-by-id",
   page: "conversations/page",
@@ -20,7 +21,10 @@ interface ResponseConversationGet {
   _id: string;
   members: MembersChat[];
   name: string;
+  avatar: string;
   messages: any[];
+  lastMessage: MessageChat;
+  isMock?: boolean;
 }
 const requestConversationPage = (token: string): Promise<ResponseType<ResponseConversationGet[]>> => {
   return instanceAxios
@@ -50,18 +54,20 @@ const requestConversationGetById = (token: string, id: string): Promise<Response
     .then(res => res.data);
 };
 
-const requestConversationCreate = (token: string, uid: number) => {
-  return instanceAxios.post(
-    endPointConversation + `/create`,
-    {
-      useridTo: uid,
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
+const requestConversationCreate = (token: string, memberId: string): Promise<ResponseType<ResponseConversationGet>> => {
+  return instanceAxios
+    .post(
+      endPoint.conversation,
+      {
+        memberId,
       },
-    }
-  );
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    .then(res => res.data);
 };
 
 // Message

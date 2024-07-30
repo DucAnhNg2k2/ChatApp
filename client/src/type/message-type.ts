@@ -6,6 +6,6 @@ export interface MessageChat {
   type: typeMessage;
   _id: string;
   conversationId: string;
-  createdBy: MembersChat;
+  createdBy: MembersChat | string;
   createdAt: string;
 }

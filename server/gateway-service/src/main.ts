@@ -11,6 +11,7 @@ const whiteListEndPoint = [
   '/auth/login',
   '/auth/verify-otp',
   '/auth/resend-otp',
+  '/files/download',
 ];
 const proxyToAuthService = ['auth', 'user-profile'];
 const proxyToChatService = ['conversations', 'messages', 'members'];
@@ -40,8 +41,7 @@ async function bootstrap() {
   // Middleware to verify token
   app.use(async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (whiteListEndPoint.includes(req.path)) {
-        console.log('White list endpoint:', req.path);
+      if (whiteListEndPoint.some((path) => req.path.includes(path))) {
         return next();
       }
 

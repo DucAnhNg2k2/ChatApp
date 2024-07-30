@@ -18,6 +18,7 @@ export class ConversationService {
   ) {}
 
   async getListConversation(user: UserReq) {
+    const curMember = await this.memberService.findByUserId(user.id);
     const conversations = await this.conversationModel
       .aggregate([
         {
@@ -36,6 +37,16 @@ export class ConversationService {
             as: 'lastMessage',
           },
         },
+        {
+          $match: {
+            'members._id': curMember._id,
+          },
+        },
+        {
+          $sort: {
+            'lastMessage.createdAt': -1,
+          },
+        },
       ])
       .exec();
 
@@ -47,6 +58,7 @@ export class ConversationService {
       return {
         ...conversation,
         name: member.name,
+        avatar: member.avatar,
         lastMessage: conversation.lastMessage[0],
       };
     });
@@ -74,6 +86,13 @@ export class ConversationService {
             as: 'messages',
           },
         },
+        {
+          $match: {
+            members: {
+              $in: [query.memberId],
+            },
+          },
+        },
       ])
       .exec();
 
@@ -83,7 +102,9 @@ export class ConversationService {
         query.memberId,
       );
       const mock = {
+        members: [member],
         name: member.name,
+        avatar: member.avatar,
         isMock: true,
       };
       return mock;
@@ -95,6 +116,7 @@ export class ConversationService {
     return {
       ...conversation[0],
       name: member.name,
+      avatar: member.avatar,
     };
   }
 
@@ -135,6 +157,7 @@ export class ConversationService {
     return {
       ...conversation[0],
       name: member.name,
+      avatar: member.avatar,
     };
   }
 
@@ -146,7 +169,7 @@ export class ConversationService {
       user,
       conversationCreateDto,
     );
-    if (getConversation) {
+    if (!getConversation || !getConversation.isMock) {
       throw new Error('Conversation already exist');
     }
 
@@ -159,7 +182,9 @@ export class ConversationService {
       members: [curMember, member],
     });
     await conversation.save();
-    return { conversation, name: member.name };
+    conversation['name'] = member.name;
+    conversation['avatar'] = member.avatar;
+    return conversation;
   }
 
   async checkUserInConversation(user: UserReq, conversationId: string) {

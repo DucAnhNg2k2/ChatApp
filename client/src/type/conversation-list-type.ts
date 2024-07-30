@@ -1,7 +1,10 @@
-import { MessageDTO } from "./MessageDTO";
+import { MembersChat } from "./member-type";
+import { MessageChat } from "./message-type";
 
 export interface ConversationListType {
   _id: string;
   name: string;
-  messages: any[];
+  avatar: string;
+  members: MembersChat[];
+  lastMessage: MessageChat;
 }

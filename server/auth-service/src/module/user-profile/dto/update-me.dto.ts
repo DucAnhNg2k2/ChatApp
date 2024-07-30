@@ -5,7 +5,11 @@ export class UpdateMeDto {
   @IsString()
   name: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   address: string;
+
+  @IsOptional()
+  @IsString()
+  avatar: string;
 }
