@@ -48,8 +48,12 @@ export class MessageService {
     };
   }
 
-  async getListMessage(user: UserReq, query: MessageGetDto) {
-    // Check the current user in the conversation
+  async getListMessage(
+    user: UserReq,
+    query: MessageGetDto,
+    page: number,
+    limit: number,
+  ) {
     const { conversation } =
       await this.conversationService.checkUserInConversation(
         user,
@@ -77,6 +81,8 @@ export class MessageService {
           as: 'createdBy',
         },
       },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
     ]);
     return data.map((message) => {
       return {

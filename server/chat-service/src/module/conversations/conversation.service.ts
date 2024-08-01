@@ -1,4 +1,4 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
 import { Model } from 'mongoose';
@@ -6,10 +6,10 @@ import { UserReq } from 'src/const/const';
 import { Conversations } from 'src/schema/conversation.schema';
 import { Members } from 'src/schema/member.schema';
 import { MemberService } from '../members/member.service';
+import { WebsocketService } from '../websocket/websocket.service';
 import { ConversationCreateByMemberDto } from './dto/conversation-create.dto';
 import { ConversationGetByIdDto } from './dto/conversation-get-by-id.dto';
 import { ConversationGetByMemberDto } from './dto/conversation-get-by-member.dto';
-import { WebsocketService } from '../websocket/websocket.service';
 @Injectable()
 export class ConversationService {
   constructor(
@@ -185,8 +185,12 @@ export class ConversationService {
       members: [curMember, member],
     });
     await conversation.save();
-    conversation['members'] = [curMember, member];
-    await this.socketService.handleCreateConversation(conversation);
+
+    (conversation['members'] as Members[]) = [curMember, member];
+    await this.socketService.handleCreateConversation(conversation, [
+      curMember,
+      member,
+    ]);
     conversation['name'] = member.name;
     conversation['avatar'] = member.avatar;
     return conversation;

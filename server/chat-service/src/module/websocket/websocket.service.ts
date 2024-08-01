@@ -91,28 +91,37 @@ export class WebsocketService
       this.clients[client.id],
       body,
     );
-    this.getSocketClientInConversation(conversation);
+    this.getSocketClientInConversation(
+      conversation['id'],
+      conversation.members,
+    );
     return this.server
       .to(conversation['id'])
       .emit(SUBSCRIBE_MESSAGE.RECEIVE_MESSAGE, message);
   }
 
-  private getSocketClientInConversation(conversation: Conversations) {
-    (conversation.members as Members[]).forEach((member) => {
+  private getSocketClientInConversation(
+    conversationId: string,
+    members: Members[],
+  ) {
+    members.forEach((member) => {
       if (this.userSocket[member.userId]) {
-        console.log(member, 'ok');
         const sockets = this.userSocket[member.userId];
         for (let i = 0; i < sockets.length; i++) {
-          if (!sockets[i].rooms.has(conversation['id'])) {
-            sockets[i].join(conversation['id']);
+          if (!sockets[i].rooms.has(conversationId)) {
+            sockets[i].join(conversationId);
           }
         }
       }
     });
   }
 
-  async handleCreateConversation(conversation: Conversations) {
-    this.getSocketClientInConversation(conversation);
+  async handleCreateConversation(
+    conversation: Conversations,
+    members: Members[],
+  ) {
+    this.getSocketClientInConversation(conversation['id'], members);
+    conversation.members = [...members];
     this.server
       .to(conversation['id'])
       .emit(SUBSCRIBE_MESSAGE.RECEIVE_CONVERSATION, conversation);

@@ -1,5 +1,5 @@
-import lodash from "lodash";
-import React, { useEffect, useState } from "react";
+import lodash, { set } from "lodash";
+import React, { useEffect, useRef, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import ReactLoading from "react-loading";
 import { useDispatch, useSelector } from "react-redux";
@@ -30,8 +30,8 @@ import { profileValidate } from "../../utils/profile-validate.utils";
 import "./chat.scss";
 import { MessageCreateDto } from "./dto/message-create.dto";
 import { requestUploadFile } from "../../api/file";
+import { LIMIT_DEFAULT, PAGE_DEFAULT } from "../../const/pagnigate";
 
-const SIZE = 15;
 const Conversation = () => {
   const dispatch = useDispatch<AppDispatch>();
   const token = useSelector((state: RootState) => state.token).value;
@@ -49,8 +49,10 @@ const Conversation = () => {
   const [members, setMembers] = useState<MembersChat[]>([]);
 
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [page, setPage] = React.useState<number>(0);
-  const [hasMore, setHasMore] = React.useState<boolean>(true);
+  const hasMore = useRef<boolean>(true);
+  const page = useRef<number>(PAGE_DEFAULT);
+  const isLoadMore = useRef<boolean>(false);
+
   const [isVisiblePopUpProfile, setIsVisiblePopUpProfile] = useState<boolean>(false);
 
   const refFile = React.useRef<HTMLInputElement>(null);
@@ -88,12 +90,11 @@ const Conversation = () => {
     }
     handleUpdateConversationWhenReceiveMessage(data);
   };
-  const handleReceiveNewConversation = (data: ConversationType) => {
-    console.log(data, "yes");
-
+  const handleReceiveNewConversation = (data: any) => {
+    setMessage([]);
     // setConversationList(prevList => [...prevList, { _id: data._id, name: data.name, messages: [] }]);
   };
-  const handleInitSocket = async () => {
+  const handleInitSocket = () => {
     try {
       const newSocket = io(`${HOST_SERVER}:${PORT_SERVER_SOCKET}`, {
         transports: ["websocket"],
@@ -115,9 +116,9 @@ const Conversation = () => {
   useEffect(() => {
     if (socket) {
       socket.off(SUBSCRIBE_MESSAGE.RECEIVE_MESSAGE);
-      socket.on(SUBSCRIBE_MESSAGE.RECEIVE_MESSAGE, handleReceiveMessage);
-
       socket.off(SUBSCRIBE_MESSAGE.RECEIVE_CONVERSATION);
+
+      socket.on(SUBSCRIBE_MESSAGE.RECEIVE_MESSAGE, handleReceiveMessage);
       socket.on(SUBSCRIBE_MESSAGE.RECEIVE_CONVERSATION, handleReceiveNewConversation);
     }
   }, [conversationList, conversation]);
@@ -219,15 +220,24 @@ const Conversation = () => {
     name.length === 0 ? setMembers([]) : handleChangeSearchLodash(name);
   };
 
-  const handleGetMessages = async (conversation: ConversationType) => {
+  const handleGetMessages = async (conversation: ConversationType, page: number = PAGE_DEFAULT) => {
     try {
-      const resMessage = await requestMessageGet(token, conversation._id);
+      const resMessage = await requestMessageGet(token, conversation._id, LIMIT_DEFAULT, page);
       if (isResponseSuccess(resMessage) && resMessage.data) {
         const data: MessageChat[] = resMessage.data;
-        setMessage(data);
+        if (page === PAGE_DEFAULT) {
+          setMessage(data);
+        } else {
+          setMessage(prevMessages => [...prevMessages, ...data]);
+        }
+        if (!data.length) {
+          hasMore.current = false;
+        }
       }
     } catch (err) {
       console.log(err);
+    } finally {
+      isLoadMore.current = false;
     }
   };
   const handleClickMember = async (member: MembersChat) => {
@@ -236,7 +246,7 @@ const Conversation = () => {
       const res = await requestConversationGetByMember(token, member);
       if (isResponseSuccess(res) && res.data) {
         const data: ConversationType = res.data;
-        setConversation(data);
+        handleOpenNewConversation(data);
         if (data._id) {
           await handleGetMessages(data);
         }
@@ -246,6 +256,13 @@ const Conversation = () => {
     setIsLoading(false);
   };
 
+  const handleOpenNewConversation = async (item: ConversationType) => {
+    page.current = PAGE_DEFAULT;
+    hasMore.current = true;
+    setConversation(item);
+    setMessage([]);
+  };
+
   const handleClickConversation = async (item: ConversationListType) => {
     if (conversation?._id === item._id) return;
     setIsLoading(true);
@@ -253,7 +270,7 @@ const Conversation = () => {
       const res = await requestConversationGetById(token, item._id);
       if (isResponseSuccess(res) && res.data) {
         const data: ConversationType = res.data;
-        setConversation(data);
+        handleOpenNewConversation(data);
         await handleGetMessages(data);
       }
     } catch (err) {
@@ -264,21 +281,11 @@ const Conversation = () => {
 
   const handleNextDataMessage = async () => {
     try {
-      // console.log("Fetch More Message !!");
-      // const cid = conversationDetailDTO?.id;
-      // if (cid) {
-      //   const newPage = page + 1;
-      //   const resMessage: ResponseType = (await requestGetMessage(cid, token, newPage, SIZE)).data;
-      //   if (resMessage.statusCode === 200) {
-      //     const data: MessageDTO[] = resMessage.data;
-      //     if (data.length === 0) {
-      //       setHasMore(false);
-      //     } else {
-      //       setMessageDTO([...messageDTO, ...data]);
-      //       setPage(newPage);
-      //     }
-      //   }
-      // }
+      if (conversation?._id && hasMore.current && !isLoadMore.current) {
+        isLoadMore.current = true;
+        await handleGetMessages(conversation, page.current + 1);
+        page.current++;
+      }
     } catch (err) {
       console.log(err);
     }
@@ -295,6 +302,8 @@ const Conversation = () => {
       refConversation.current.style.left = "100%";
     }
   };
+
+  console.log("ReRender!!");
 
   return (
     <Modal>
@@ -386,7 +395,7 @@ const Conversation = () => {
                     next={handleNextDataMessage}
                     style={{ display: "flex", flexDirection: "column-reverse" }} //To put endMessage and loader to the top.
                     inverse={true}
-                    hasMore={hasMore}
+                    hasMore={hasMore.current}
                     loader={
                       <div className="chat-detail-load">
                         <ReactLoading type={"spin"} color={colors.black} width={30} height={30} />

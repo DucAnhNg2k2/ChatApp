@@ -78,9 +78,9 @@ const requestMessageCreate = (socket: Socket | null, messageCreateDto: MessageCr
   socket.emit(SUBSCRIBE_MESSAGE.CREATE_MESSAGE, messageCreateDto);
   return true;
 };
-const requestMessageGet = (token: string, conversationId: string): Promise<ResponseType<MessageChat[]>> => {
+const requestMessageGet = (token: string, conversationId: string, limit: number, page: number): Promise<ResponseType<MessageChat[]>> => {
   return instanceAxios
-    .get(endPoint.messagePage + `?conversationId=${conversationId}`, {
+    .get(endPoint.messagePage + `?conversationId=${conversationId}&limit=${limit}&page=${page}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
