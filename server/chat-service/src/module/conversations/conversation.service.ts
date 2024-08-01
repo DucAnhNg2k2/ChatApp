@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
 import { Model } from 'mongoose';
@@ -9,12 +9,15 @@ import { MemberService } from '../members/member.service';
 import { ConversationCreateByMemberDto } from './dto/conversation-create.dto';
 import { ConversationGetByIdDto } from './dto/conversation-get-by-id.dto';
 import { ConversationGetByMemberDto } from './dto/conversation-get-by-member.dto';
+import { WebsocketService } from '../websocket/websocket.service';
 @Injectable()
 export class ConversationService {
   constructor(
     @InjectModel(Conversations.name, 'chat-service')
     private conversationModel: Model<Conversations>,
     private memberService: MemberService,
+    // @Inject(forwardRef(() => WebsocketService))
+    private socketService: WebsocketService,
   ) {}
 
   async getListConversation(user: UserReq) {
@@ -182,6 +185,8 @@ export class ConversationService {
       members: [curMember, member],
     });
     await conversation.save();
+    conversation['members'] = [curMember, member];
+    await this.socketService.handleCreateConversation(conversation);
     conversation['name'] = member.name;
     conversation['avatar'] = member.avatar;
     return conversation;

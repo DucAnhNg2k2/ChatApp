@@ -72,22 +72,26 @@ const Conversation = () => {
   }, []);
 
   const handleUpdateConversationWhenReceiveMessage = (data: MessageChat) => {
-    // Push conversation to top
-    const { conversationId } = data;
-    const conversation = conversationList.find(item => item._id === conversationId);
-    if (!conversation) {
-      return;
-    }
-    conversation.lastMessage = data;
-    const newConversation = [conversation, ...conversationList.filter(item => item._id !== conversationId)];
-    setConversationList(newConversation);
+    setConversationList(prevList => {
+      const { conversationId } = data;
+      const conversation = prevList.find(item => item._id === conversationId);
+      if (!conversation) {
+        return prevList;
+      }
+      const updatedConversation = { ...conversation, lastMessage: data };
+      return [updatedConversation, ...prevList.filter(item => item._id !== conversationId)];
+    });
   };
   const handleReceiveMessage = (data: MessageChat) => {
-    setMessage(pre => [data, ...pre]);
+    if (conversation && conversation._id === data.conversationId) {
+      setMessage(prevMessages => [data, ...prevMessages]);
+    }
     handleUpdateConversationWhenReceiveMessage(data);
   };
   const handleReceiveNewConversation = (data: ConversationType) => {
-    // setConversationList(pre => [...pre, { _id: data._id, name: data.name, messages: [] }]);
+    console.log(data, "yes");
+
+    // setConversationList(prevList => [...prevList, { _id: data._id, name: data.name, messages: [] }]);
   };
   const handleInitSocket = async () => {
     try {
@@ -110,8 +114,11 @@ const Conversation = () => {
   }, []);
   useEffect(() => {
     if (socket) {
+      socket.off(SUBSCRIBE_MESSAGE.RECEIVE_MESSAGE);
       socket.on(SUBSCRIBE_MESSAGE.RECEIVE_MESSAGE, handleReceiveMessage);
-      socket.on(SUBSCRIBE_MESSAGE.RECEIVE_NEW_CONVERSATION, handleReceiveNewConversation);
+
+      socket.off(SUBSCRIBE_MESSAGE.RECEIVE_CONVERSATION);
+      socket.on(SUBSCRIBE_MESSAGE.RECEIVE_CONVERSATION, handleReceiveNewConversation);
     }
   }, [conversationList, conversation]);
 
@@ -132,7 +139,7 @@ const Conversation = () => {
     setIsVisiblePopUpProfile(!profileValidate(profile));
   }, [profile]);
 
-  const handleFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSendMessageFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       const file = event.target.files;
       if (!file) {
@@ -145,6 +152,7 @@ const Conversation = () => {
           typeMessage: typeMessage.IMAGE,
         });
       }
+      console.log("[handleSendMessageFile] responseFile", responseFile);
     } catch (err) {
       console.log(err);
     }
@@ -173,14 +181,13 @@ const Conversation = () => {
       }
       const conversationId = conversationTmp?._id;
       const status = requestMessageCreate(socket, { ...data, conversationId });
-      if (status) {
+      if (status && data.typeMessage === typeMessage.TEXT) {
         setText("");
       }
     } catch (err) {
       console.log(err);
     }
   };
-
   useEffect(() => {
     // Responsive mobile set style.left = 0
     if (refConversation && refConversation.current) {
@@ -393,7 +400,7 @@ const Conversation = () => {
               )}
             </div>
             <div className="chat-detail-input flex justify-center">
-              <input type="file" className="hidden" ref={refFile} onChange={handleFile} accept="image/*" />
+              <input type="file" className="hidden" ref={refFile} onChange={handleSendMessageFile} accept="image/*" />
               <button className="chat-detail-select-img" onClick={handleClickButtonFile}>
                 <i className="fa-solid fa-image"></i>
               </button>

@@ -1,10 +1,12 @@
-import { Module } from '@nestjs/common';
-import { WebsocketService } from './websocket.service';
+import { forwardRef, Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AuthService } from 'src/const/const';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MessageModule } from '../messages/message.module';
+import { WebsocketService } from './websocket.service';
 
+// WebSocketModule -> MessageModule -> ConversationModule -> WebsocketModule => Circular dependency
+// ModuleRef:
 @Module({
   imports: [
     ClientsModule.registerAsync({
@@ -27,10 +29,11 @@ import { MessageModule } from '../messages/message.module';
         },
       ],
     }),
+    // forwardRef(() => MessageModule),
     MessageModule,
   ],
   controllers: [],
   providers: [WebsocketService],
-  exports: [],
+  exports: [WebsocketService],
 })
 export class WebsocketModule {}

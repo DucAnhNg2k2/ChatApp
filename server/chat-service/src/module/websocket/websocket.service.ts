@@ -1,4 +1,4 @@
-import { Inject } from '@nestjs/common';
+import { forwardRef, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
   ConnectedSocket,
@@ -41,6 +41,7 @@ export class WebsocketService
 
   constructor(
     @Inject(AuthService.AUTH_SERVICE) private authServiceClient: ClientProxy,
+    // @Inject(forwardRef(() => MessageService))
     private messageService: MessageService,
   ) {}
 
@@ -82,7 +83,7 @@ export class WebsocketService
   }
 
   @SubscribeMessage(SUBSCRIBE_MESSAGE.CREATE_MESSAGE)
-  async handleEvent(
+  async handleCreateMessage(
     @MessageBody() body: MessageCreateDto,
     @ConnectedSocket() client: Socket,
   ) {
@@ -99,6 +100,7 @@ export class WebsocketService
   private getSocketClientInConversation(conversation: Conversations) {
     (conversation.members as Members[]).forEach((member) => {
       if (this.userSocket[member.userId]) {
+        console.log(member, 'ok');
         const sockets = this.userSocket[member.userId];
         for (let i = 0; i < sockets.length; i++) {
           if (!sockets[i].rooms.has(conversation['id'])) {
@@ -107,5 +109,12 @@ export class WebsocketService
         }
       }
     });
+  }
+
+  async handleCreateConversation(conversation: Conversations) {
+    this.getSocketClientInConversation(conversation);
+    this.server
+      .to(conversation['id'])
+      .emit(SUBSCRIBE_MESSAGE.RECEIVE_CONVERSATION, conversation);
   }
 }

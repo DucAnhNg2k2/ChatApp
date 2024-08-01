@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
 import { Model } from 'mongoose';
@@ -13,6 +13,7 @@ export class MessageService {
   constructor(
     @InjectModel(Messages.name, 'chat-service')
     private messageModel: Model<Messages>,
+    @Inject(forwardRef(() => ConversationService))
     private conversationService: ConversationService,
   ) {}
 

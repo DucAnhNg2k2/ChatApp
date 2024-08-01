@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ConversationController } from './conversation.controller';
 import { ConversationService } from './conversation.service';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -7,6 +7,7 @@ import {
   ConversationsSchema,
 } from 'src/schema/conversation.schema';
 import { MemberModule } from '../members/member.module';
+import { WebsocketModule } from '../websocket/websocket.module';
 
 @Module({
   imports: [
@@ -15,6 +16,8 @@ import { MemberModule } from '../members/member.module';
       'chat-service',
     ),
     MemberModule,
+    // forwardRef(() => WebsocketModule),
+    WebsocketModule,
   ],
   controllers: [ConversationController],
   providers: [ConversationService],

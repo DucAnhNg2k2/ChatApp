@@ -1,10 +1,19 @@
 import { UserReq } from 'src/const/const';
 import { ConversationService } from './conversation.service';
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  forwardRef,
+  Get,
+  Inject,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { User } from 'src/decorators/user.decorator';
 import { ConversationCreateByMemberDto } from './dto/conversation-create.dto';
 import { ConversationGetByMemberDto } from './dto/conversation-get-by-member.dto';
 import { ConversationGetByIdDto } from './dto/conversation-get-by-id.dto';
+import { WebsocketService } from '../websocket/websocket.service';
 
 @Controller('conversations')
 export class ConversationController {
